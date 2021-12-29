@@ -296,14 +296,15 @@ namespace SummaryAPI2.Controllers
 
                                 if (Array.IndexOf(skipSD, subDomain) == -1)
                                 {
-                                   
+
 
                                     try
                                     {
                                         DataSet dsReporting = new DataSet();
                                         DataSet dsNotReporting = new DataSet();
                                         DataSet dsRegions = new DataSet();
-
+                                        DataSet dsLoginId = new DataSet();
+                                        DataSet dsState = new DataSet();
                                         using (SqlConnection cnMain = new SqlConnection(conSqlSub))
                                         {
                                             SqlDataAdapter da = new SqlDataAdapter("select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'", cnMain);
@@ -316,7 +317,32 @@ namespace SummaryAPI2.Controllers
                                             SqlDataAdapter da = new SqlDataAdapter("select count(*) as Reporting from sensordetails where isreporting = '1'", cnMain);
 
                                             da.Fill(dsReporting);
-                                        }                                       
+                                        }
+                                        using (SqlConnection cnMain = new SqlConnection(conSqlSub))
+                                        {
+                                            SqlDataAdapter da = new SqlDataAdapter("select userid from UserDetails where RoleId is null and not UserName is null", cnMain);
+                                            da.Fill(dsLoginId);
+                                        }
+                                        for (int ld = 0; ld < dsLoginId.Tables[0].Rows.Count; ld++)
+                                        {
+                                            using (SqlConnection cnMain = new SqlConnection(conSqlSub))
+                                            {
+                                                try
+                                                {
+                                                    SqlDataAdapter da = new SqlDataAdapter("GET_LiveData_New", cnMain);
+                                                    da.SelectCommand.CommandType = CommandType.StoredProcedure;
+                                                    //SqlParameter logParameter = new SqlParameter("@LoginId", SqlDbType.UniqueIdentifier);
+                                                    //logParameter.Value = new Guid(dsLoginId.Tables[0].Rows[ld]["userid"].ToString());
+                                                    //da.SelectCommand.Parameters.Add(logParameter);
+                                                    da.SelectCommand.Parameters.AddWithValue("@LoginId", new Guid(dsLoginId.Tables[0].Rows[ld]["userid"].ToString()));
+                                                    da.Fill(dsState);
+                                                }
+                                                catch (Exception exe)
+                                                {
+                                                    exe = null;
+                                                }
+                                            }
+                                        }
                                         for (int pd = 0; pd < lstclientData.Count; pd++)
                                         {
                                             if (subDomain == lstclientData[pd].subDomain.ToString())
