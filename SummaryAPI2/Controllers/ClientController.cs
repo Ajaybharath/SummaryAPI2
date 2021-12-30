@@ -16,6 +16,8 @@ namespace SummaryAPI2.Controllers
     [RoutePrefix("API/Client")]
     public class ClientController : ApiController
     {
+        public string goodVal,warningVal,criticalVal;
+        public int goodCount, warningCount, criticalCount;
         [HttpPost]
         [Route("Details")]
         public dynamic get_clientDetails(Client c)
@@ -248,6 +250,7 @@ namespace SummaryAPI2.Controllers
         public dynamic getClientData(Client c)
         {
             List<clientData> lstclientData = new List<clientData>();
+           
             try
             {
                 string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
@@ -270,7 +273,7 @@ namespace SummaryAPI2.Controllers
                     string conSqlSub = string.Empty;
                     string subDomain = string.Empty;
                     string clientDetails = string.Empty;
-
+                    //string goodVal, warningVal, criticalVal;
                     for (int i = 1; i < 10; i++)
                     {
                         try
@@ -296,8 +299,6 @@ namespace SummaryAPI2.Controllers
 
                                 if (Array.IndexOf(skipSD, subDomain) == -1)
                                 {
-
-
                                     try
                                     {
                                         DataSet dsReporting = new DataSet();
@@ -305,6 +306,7 @@ namespace SummaryAPI2.Controllers
                                         DataSet dsRegions = new DataSet();
                                         DataSet dsLoginId = new DataSet();
                                         DataSet dsState = new DataSet();
+                                       
                                         using (SqlConnection cnMain = new SqlConnection(conSqlSub))
                                         {
                                             SqlDataAdapter da = new SqlDataAdapter("select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'", cnMain);
@@ -323,24 +325,73 @@ namespace SummaryAPI2.Controllers
                                             SqlDataAdapter da = new SqlDataAdapter("select userid from UserDetails where RoleId is null and not UserName is null", cnMain);
                                             da.Fill(dsLoginId);
                                         }
-                                        for (int ld = 0; ld < dsLoginId.Tables[0].Rows.Count; ld++)
+                                                      
+                                        using (SqlConnection cnMain = new SqlConnection(conSqlSub))
                                         {
-                                            using (SqlConnection cnMain = new SqlConnection(conSqlSub))
+                                            try
                                             {
-                                                try
+                                                SqlDataAdapter da = new SqlDataAdapter("GET_LiveData_New", cnMain);
+                                                da.SelectCommand.CommandType = CommandType.StoredProcedure;
+                                                da.SelectCommand.Parameters.AddWithValue("@LoginId", new Guid(dsLoginId.Tables[0].Rows[0]["userid"].ToString()));
+                                                da.Fill(dsState);
+                                                DataTable stateTable = new DataTable();
+                                                stateTable = dsState.Tables[3];
+                                                if (stateTable.Rows.Count > 0)
                                                 {
-                                                    SqlDataAdapter da = new SqlDataAdapter("GET_LiveData_New", cnMain);
-                                                    da.SelectCommand.CommandType = CommandType.StoredProcedure;
-                                                    //SqlParameter logParameter = new SqlParameter("@LoginId", SqlDbType.UniqueIdentifier);
-                                                    //logParameter.Value = new Guid(dsLoginId.Tables[0].Rows[ld]["userid"].ToString());
-                                                    //da.SelectCommand.Parameters.Add(logParameter);
-                                                    da.SelectCommand.Parameters.AddWithValue("@LoginId", new Guid(dsLoginId.Tables[0].Rows[ld]["userid"].ToString()));
-                                                    da.Fill(dsState);
+                                                    List<string> deviceLst = new List<string>();
+                                                    for (int sT = 0; sT < stateTable.Rows.Count; sT++)
+                                                    {
+                                                        deviceLst.Add(stateTable.Rows[sT]["Deviceid"].ToString());
+                                                    }
+                                                    List<string> deviceLst1 = new List<string>();
+                                                    deviceLst1 = deviceLst.Distinct().ToList();
+                                                    goodCount = 0; warningCount = 0; criticalCount = 0;
+                                                    for (int sT = 0; sT < stateTable.Rows.Count; sT++)
+                                                    {
+                                                        
+                                                        for (int dLst = 0; dLst < deviceLst1.Count; dLst++)
+                                                        {
+                                                            if (stateTable.Rows[sT]["State"].ToString().ToLower() == "good" && stateTable.Rows[sT]["Deviceid"].ToString() == deviceLst1[dLst])
+                                                            {
+                                                                warningCount = 0; criticalCount = 0;
+                                                                goto countGood;
+                                                            }
+                                                            else if (stateTable.Rows[sT]["State"].ToString().ToLower() == "warning" && stateTable.Rows[sT]["Deviceid"].ToString() == deviceLst1[dLst])
+                                                            {
+                                                                goodCount = 0;  criticalCount = 0;
+                                                                goto countWarning;
+                                                            }
+                                                            else if (stateTable.Rows[sT]["State"].ToString().ToLower() == "critical" && stateTable.Rows[sT]["Deviceid"].ToString() == deviceLst1[dLst])
+                                                            {
+                                                                goodCount = 0; warningCount = 0;
+                                                                goto countCritical;
+                                                            }
+                                                            else
+                                                            {
+                                                                continue;
+                                                            }
+                                                        countGood:
+                                                            goodCount = goodCount + 1;
+                                                            continue;
+                                                        countWarning:
+                                                            warningCount = warningCount + 1;
+                                                            continue;
+                                                        countCritical:
+                                                            criticalCount = criticalCount + 1;
+                                                            continue;
+                                                        }
+                                                    }
+
+                                                    goodVal = goodCount.ToString(); criticalVal = criticalCount.ToString(); warningVal = warningCount.ToString(); 
                                                 }
-                                                catch (Exception exe)
+                                                else
                                                 {
-                                                    exe = null;
+                                                    goodVal = "0"; criticalVal = "0"; warningVal = "0";
                                                 }
+                                            }
+                                            catch (Exception exe)
+                                            {
+                                                exe = null;
                                             }
                                         }
                                         for (int pd = 0; pd < lstclientData.Count; pd++)
@@ -350,6 +401,9 @@ namespace SummaryAPI2.Controllers
                                                 lstclientData[pd].reporting = Convert.ToString(dsReporting.Tables[0].Rows[0]["Reporting"]);
                                                 lstclientData[pd].notReporting = Convert.ToString(dsNotReporting.Tables[0].Rows[0]["notReporting"]);
                                                 lstclientData[pd].totalDevice = Convert.ToString(Convert.ToInt32(dsReporting.Tables[0].Rows[0]["Reporting"].ToString()) + Convert.ToInt32(dsNotReporting.Tables[0].Rows[0]["notReporting"].ToString()));
+                                                lstclientData[pd].Good = goodVal;
+                                                lstclientData[pd].Warning = warningVal;
+                                                lstclientData[pd].Critical = criticalVal;
                                             }
                                         }
                                     }
