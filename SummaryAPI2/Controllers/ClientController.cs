@@ -346,42 +346,29 @@ namespace SummaryAPI2.Controllers
                                                     List<string> deviceLst1 = new List<string>();
                                                     deviceLst1 = deviceLst.Distinct().ToList();
                                                     goodCount = 0; warningCount = 0; criticalCount = 0;
-                                                    for (int sT = 0; sT < stateTable.Rows.Count; sT++)
+                                                    for (int dLst = 0; dLst < deviceLst1.Count; dLst++)
                                                     {
-                                                        
-                                                        for (int dLst = 0; dLst < deviceLst1.Count; dLst++)
+                                                        List<string> stateLst = new List<string>();
+                                                        for (int sT = 0; sT < stateTable.Rows.Count; sT++)
                                                         {
-                                                            if (stateTable.Rows[sT]["State"].ToString().ToLower() == "good" && stateTable.Rows[sT]["Deviceid"].ToString() == deviceLst1[dLst])
+                                                            if (stateTable.Rows[sT]["Deviceid"].ToString() == deviceLst1[dLst])
                                                             {
-                                                                warningCount = 0; criticalCount = 0;
-                                                                goto countGood;
+                                                                stateLst.Add(stateTable.Rows[sT]["State"].ToString());
                                                             }
-                                                            else if (stateTable.Rows[sT]["State"].ToString().ToLower() == "warning" && stateTable.Rows[sT]["Deviceid"].ToString() == deviceLst1[dLst])
-                                                            {
-                                                                goodCount = 0;  criticalCount = 0;
-                                                                goto countWarning;
-                                                            }
-                                                            else if (stateTable.Rows[sT]["State"].ToString().ToLower() == "critical" && stateTable.Rows[sT]["Deviceid"].ToString() == deviceLst1[dLst])
-                                                            {
-                                                                goodCount = 0; warningCount = 0;
-                                                                goto countCritical;
-                                                            }
-                                                            else
-                                                            {
-                                                                continue;
-                                                            }
-                                                        countGood:
-                                                            goodCount = goodCount + 1;
-                                                            continue;
-                                                        countWarning:
-                                                            warningCount = warningCount + 1;
-                                                            continue;
-                                                        countCritical:
+                                                        }
+                                                        if (stateLst.Contains("Critical"))
+                                                        {
                                                             criticalCount = criticalCount + 1;
-                                                            continue;
+                                                        }
+                                                        else if (stateLst.Contains("Warning"))
+                                                        {
+                                                            warningCount = warningCount + 1;
+                                                        }
+                                                        else
+                                                        {
+                                                            goodCount = goodCount + 1;
                                                         }
                                                     }
-
                                                     goodVal = goodCount.ToString(); criticalVal = criticalCount.ToString(); warningVal = warningCount.ToString(); 
                                                 }
                                                 else
