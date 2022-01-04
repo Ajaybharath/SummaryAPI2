@@ -263,6 +263,7 @@ namespace SummaryAPI2.Controllers
                     for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
                     {
                         clientData clientData = new clientData();
+                        clientData.C_CID = ds.Tables[0].Rows[i]["C_CID"].ToString();
                         clientData.domain = ds.Tables[0].Rows[i]["Domain"].ToString();
                         clientData.subDomain = ds.Tables[0].Rows[i]["Subdomain"].ToString();
                         clientData.portal = ds.Tables[0].Rows[i]["PortalURL"].ToString();

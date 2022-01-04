@@ -39,6 +39,7 @@ namespace SummaryAPI2.Models
     }
     public class clientData
     {
+        public string C_CID { get; set; }
         public string domain { get; set; }
         public string subDomain { get; set; }
         public string totalDevice { get; set; }
