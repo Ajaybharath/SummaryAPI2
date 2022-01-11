@@ -50,4 +50,10 @@ namespace SummaryAPI2.Models
         public string Warning { get; set; }
         public string Critical { get; set; }
     }
+    public class MailInput
+    {
+        public string MailIds { get; set; }
+        public string Message { get; set; }
+        public string Filename { get; set; }
+    }
 }

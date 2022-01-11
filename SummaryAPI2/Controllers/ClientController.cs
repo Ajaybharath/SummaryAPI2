@@ -6,9 +6,11 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
+using System.Threading;
 using System.Web.Http;
+using System.Net.Mail;
 using System.Web.Http.Cors;
+using System.IO;
 
 namespace SummaryAPI2.Controllers
 {
@@ -16,7 +18,7 @@ namespace SummaryAPI2.Controllers
     [RoutePrefix("API/Client")]
     public class ClientController : ApiController
     {
-        public string goodVal,warningVal,criticalVal;
+        public string goodVal, warningVal, criticalVal;
         public int goodCount, warningCount, criticalCount;
         [HttpPost]
         [Route("Details")]
@@ -250,7 +252,7 @@ namespace SummaryAPI2.Controllers
         public dynamic getClientData(Client c)
         {
             List<clientData> lstclientData = new List<clientData>();
-           
+
             try
             {
                 string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
@@ -307,7 +309,7 @@ namespace SummaryAPI2.Controllers
                                         DataSet dsRegions = new DataSet();
                                         DataSet dsLoginId = new DataSet();
                                         DataSet dsState = new DataSet();
-                                       
+
                                         using (SqlConnection cnMain = new SqlConnection(conSqlSub))
                                         {
                                             SqlDataAdapter da = new SqlDataAdapter("select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'", cnMain);
@@ -326,7 +328,7 @@ namespace SummaryAPI2.Controllers
                                             SqlDataAdapter da = new SqlDataAdapter("select userid from UserDetails where RoleId is null and not UserName is null", cnMain);
                                             da.Fill(dsLoginId);
                                         }
-                                                      
+
                                         using (SqlConnection cnMain = new SqlConnection(conSqlSub))
                                         {
                                             try
@@ -370,7 +372,7 @@ namespace SummaryAPI2.Controllers
                                                             goodCount = goodCount + 1;
                                                         }
                                                     }
-                                                    goodVal = goodCount.ToString(); criticalVal = criticalCount.ToString(); warningVal = warningCount.ToString(); 
+                                                    goodVal = goodCount.ToString(); criticalVal = criticalCount.ToString(); warningVal = warningCount.ToString();
                                                 }
                                                 else
                                                 {
@@ -417,6 +419,38 @@ namespace SummaryAPI2.Controllers
             return lstclientData;
 
         }
-
+        [HttpPost]
+        [Route("SendMail")]
+        public string mail(MailInput v)
+        {
+            MailMessage mailMsg = new MailMessage();
+            mailMsg.From = new MailAddress("ajaybharath009@gmail.com", "IB IoT");
+            string[] mails = v.MailIds.Split(',');
+            foreach (string mail in mails)
+            {
+                mailMsg.To.Add(new MailAddress(mail));
+            }
+            mailMsg.Subject = "Testing Mail";
+            mailMsg.Body = v.Message;
+            string filename = v.Filename;
+            Thread.Sleep(1000);
+            string filePath = "C:/Users/AjayBharath/Downloads/" + filename;
+            //string[] filePaths = Directory.GetFiles(@"c:\Users\AjayBharath\Downloads\", "*.pdf");
+            //string fileName = Path.GetFileName(filePath);
+            //string fileName = filePath.Split('/')[filePath.Split('/').Length -1].Replace('+',' ').Trim(); 
+            //string fileName = Path.GetFileName(filename);
+            //string fileName = filePath.Split('/')[filePath.Split('/').Length -1].Replace('+',' ').Replace(':',' ').Replace('-',' ').Replace(" ", string.Empty); 
+            string fileName = filePath.Split('/')[filePath.Split('/').Length -1]; 
+            byte[] bytes = File.ReadAllBytes(filePath);
+            mailMsg.Attachments.Add(new Attachment(new MemoryStream(bytes), fileName));
+            mailMsg.IsBodyHtml = true;
+            SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
+            smtp.UseDefaultCredentials = false;
+            smtp.Credentials = new NetworkCredential("ajaybharath009@gmail.com", "ajay009@1234");
+            smtp.EnableSsl = true;
+            smtp.Send(mailMsg);
+           // mailMsg.To.Clear();
+            return "mail sent";
+        }
     }
 }
