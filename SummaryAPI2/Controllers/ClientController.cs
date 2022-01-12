@@ -423,34 +423,36 @@ namespace SummaryAPI2.Controllers
         [Route("SendMail")]
         public string mail(MailInput v)
         {
-            MailMessage mailMsg = new MailMessage();
-            mailMsg.From = new MailAddress("ajaybharath009@gmail.com", "IB IoT");
-            string[] mails = v.MailIds.Split(',');
-            foreach (string mail in mails)
+            try
             {
-                mailMsg.To.Add(new MailAddress(mail));
+                MailMessage mailMsg = new MailMessage();
+                mailMsg.From = new MailAddress("ajaybharath009@gmail.com", "IB IoT");
+                string[] mails = v.MailIds.Split(',');
+                foreach (string mail in mails)
+                {
+                    mailMsg.To.Add(new MailAddress(mail));
+                }
+                mailMsg.Subject = "Testing Mail";
+                mailMsg.Body = v.Message;
+                string filename = v.Filename;
+                Thread.Sleep(10000);
+                string filePath = "C:/Users/AjayBharath/Downloads/" + filename;
+                string fileName = filePath.Split('/')[filePath.Split('/').Length - 1];
+                byte[] bytes = File.ReadAllBytes(filePath);
+                mailMsg.Attachments.Add(new Attachment(new MemoryStream(bytes), fileName));
+                mailMsg.IsBodyHtml = true;
+                SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
+                smtp.UseDefaultCredentials = false;
+                smtp.Credentials = new NetworkCredential("ajaybharath009@gmail.com", "ajay009@1234");
+                smtp.EnableSsl = true;
+                smtp.Send(mailMsg);
+                // mailMsg.To.Clear();
+                return "mail sent";
             }
-            mailMsg.Subject = "Testing Mail";
-            mailMsg.Body = v.Message;
-            string filename = v.Filename;
-            Thread.Sleep(1000);
-            string filePath = "C:/Users/AjayBharath/Downloads/" + filename;
-            //string[] filePaths = Directory.GetFiles(@"c:\Users\AjayBharath\Downloads\", "*.pdf");
-            //string fileName = Path.GetFileName(filePath);
-            //string fileName = filePath.Split('/')[filePath.Split('/').Length -1].Replace('+',' ').Trim(); 
-            //string fileName = Path.GetFileName(filename);
-            //string fileName = filePath.Split('/')[filePath.Split('/').Length -1].Replace('+',' ').Replace(':',' ').Replace('-',' ').Replace(" ", string.Empty); 
-            string fileName = filePath.Split('/')[filePath.Split('/').Length -1]; 
-            byte[] bytes = File.ReadAllBytes(filePath);
-            mailMsg.Attachments.Add(new Attachment(new MemoryStream(bytes), fileName));
-            mailMsg.IsBodyHtml = true;
-            SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
-            smtp.UseDefaultCredentials = false;
-            smtp.Credentials = new NetworkCredential("ajaybharath009@gmail.com", "ajay009@1234");
-            smtp.EnableSsl = true;
-            smtp.Send(mailMsg);
-           // mailMsg.To.Clear();
-            return "mail sent";
+            catch (Exception ex)
+            {
+                return "mail not sent!!!";
+            }
         }
     }
 }
