@@ -258,7 +258,7 @@ namespace SummaryAPI2.Controllers
                 string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
                 if (c.uid == "idea" && c.pwd == "bytes")
                 {
-                    SqlConnection cn = new SqlConnection("uid=sa;pwd=Ide@123;database=AB;server=AJAYBHARATH\\SQLEXPRESS");
+                    SqlConnection cn = new SqlConnection("uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP");
                     SqlDataAdapter da1 = new SqlDataAdapter("select * from centralcontrol", cn);
                     DataSet ds = new DataSet();
                     da1.Fill(ds);
@@ -297,6 +297,7 @@ namespace SummaryAPI2.Controllers
                             {
 
                                 subDomain = Convert.ToString(dsClientData.Tables[0].Rows[sd]["DomainName"]);
+
 
                                 conSqlSub = conSqlMain.Replace("IoTMainData", subDomain);
 
@@ -421,13 +422,18 @@ namespace SummaryAPI2.Controllers
         }
         [HttpPost]
         [Route("SendMail")]
-        public string mail(MailInput v)
+        public string Mail(MailInput v)
         {
             try
             {
+                SqlConnection cn = new SqlConnection("uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP");
+                SqlDataAdapter da1 = new SqlDataAdapter("select * from Mails", cn);
+                DataSet ds = new DataSet();
+                da1.Fill(ds);
+                string[] mails = ds.Tables[0].AsEnumerable().Select(x => x[1].ToString()).ToArray();
                 MailMessage mailMsg = new MailMessage();
                 mailMsg.From = new MailAddress("ajaybharath009@gmail.com", "IB IoT");
-                string[] mails = v.MailIds.Split(',');
+                /*string[] mails = v.MailIds.Split(',')*/;
                 foreach (string mail in mails)
                 {
                     mailMsg.To.Add(new MailAddress(mail));
@@ -436,7 +442,8 @@ namespace SummaryAPI2.Controllers
                 mailMsg.Body = v.Message;
                 string filename = v.Filename;
                 Thread.Sleep(10000);
-                string filePath = "C:/Users/AjayBharath/Downloads/" + filename;
+                //change path accordingly
+                string filePath = "C:/Users/Admin/Downloads/" + filename;
                 string fileName = filePath.Split('/')[filePath.Split('/').Length - 1];
                 byte[] bytes = File.ReadAllBytes(filePath);
                 mailMsg.Attachments.Add(new Attachment(new MemoryStream(bytes), fileName));

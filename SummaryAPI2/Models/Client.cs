@@ -52,7 +52,7 @@ namespace SummaryAPI2.Models
     }
     public class MailInput
     {
-        public string MailIds { get; set; }
+        //public string MailIds { get; set; }
         public string Message { get; set; }
         public string Filename { get; set; }
     }
