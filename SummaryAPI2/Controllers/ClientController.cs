@@ -430,6 +430,7 @@ namespace SummaryAPI2.Controllers
                 SqlDataAdapter da1 = new SqlDataAdapter("select * from Mails", cn);
                 DataSet ds = new DataSet();
                 da1.Fill(ds);
+                // var m = ds.Tables[0].AsEnumerable();
                 string[] mails = ds.Tables[0].AsEnumerable().Select(x => x[1].ToString()).ToArray();
                 MailMessage mailMsg = new MailMessage();
                 mailMsg.From = new MailAddress("ajaybharath009@gmail.com", "IB IoT");
@@ -443,14 +444,16 @@ namespace SummaryAPI2.Controllers
                 string filename = v.Filename;
                 Thread.Sleep(10000);
                 //change path accordingly
-                string filePath = "C:/Users/Admin/Downloads/" + filename;
+                //string filePath = "C:/Users/Admin/Downloads/" + filename;
+                string userPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                string filePath = $"{userPath}/Downloads/" + filename;
                 string fileName = filePath.Split('/')[filePath.Split('/').Length - 1];
                 byte[] bytes = File.ReadAllBytes(filePath);
                 mailMsg.Attachments.Add(new Attachment(new MemoryStream(bytes), fileName));
                 mailMsg.IsBodyHtml = true;
                 SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
                 smtp.UseDefaultCredentials = false;
-                smtp.Credentials = new NetworkCredential("ajaybharath009@gmail.com", "ajay009@1234");
+                smtp.Credentials = new NetworkCredential(ConfigurationManager.AppSettings["emailId"].ToString(), ConfigurationManager.AppSettings["emailPwd"].ToString());
                 smtp.EnableSsl = true;
                 smtp.Send(mailMsg);
                 // mailMsg.To.Clear();
