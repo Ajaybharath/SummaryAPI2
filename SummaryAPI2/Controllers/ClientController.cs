@@ -258,7 +258,9 @@ namespace SummaryAPI2.Controllers
                 string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
                 if (c.uid == "idea" && c.pwd == "bytes")
                 {
-                    SqlConnection cn = new SqlConnection("uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP");
+                    string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "ajaybharath");
+
+                    SqlConnection cn = new SqlConnection(con);
                     SqlDataAdapter da1 = new SqlDataAdapter("select * from centralcontrol", cn);
                     DataSet ds = new DataSet();
                     da1.Fill(ds);
@@ -426,14 +428,15 @@ namespace SummaryAPI2.Controllers
         {
             try
             {
-                SqlConnection cn = new SqlConnection("uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP");
+                string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "ajaybharath");
+                SqlConnection cn = new SqlConnection(con);
                 SqlDataAdapter da1 = new SqlDataAdapter("select * from Mails", cn);
                 DataSet ds = new DataSet();
                 da1.Fill(ds);
                 // var m = ds.Tables[0].AsEnumerable();
                 string[] mails = ds.Tables[0].AsEnumerable().Select(x => x[1].ToString()).ToArray();
                 MailMessage mailMsg = new MailMessage();
-                mailMsg.From = new MailAddress("ajaybharath009@gmail.com", "IB IoT");
+                mailMsg.From = new MailAddress(ConfigurationManager.AppSettings["emailId"].ToString(), "IB IoT");
                 /*string[] mails = v.MailIds.Split(',')*/;
                 foreach (string mail in mails)
                 {
@@ -446,6 +449,7 @@ namespace SummaryAPI2.Controllers
                 //change path accordingly
                 //string filePath = "C:/Users/Admin/Downloads/" + filename;
                 string userPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                //string userPath = Environment.GetEnvironmentVariable("userprofile");
                 string filePath = $"{userPath}/Downloads/" + filename;
                 string fileName = filePath.Split('/')[filePath.Split('/').Length - 1];
                 byte[] bytes = File.ReadAllBytes(filePath);
@@ -461,7 +465,7 @@ namespace SummaryAPI2.Controllers
             }
             catch (Exception ex)
             {
-                return "mail not sent!!!";
+                return "mail not sent!!!" + ex.Message;
             }
         }
     }
