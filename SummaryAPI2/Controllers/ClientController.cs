@@ -468,5 +468,22 @@ namespace SummaryAPI2.Controllers
                 return "mail not sent!!!" + ex.Message;
             }
         }
+        [HttpPost]
+        [Route("MailConfig")]
+        public string SaveMail(MailConfig m)
+        {
+            string sql = "insert into mails(MailId,Timestamp) values(@mailid,@timestamp)";
+            string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "ajaybharath");
+            SqlConnection cn = new SqlConnection(con);
+            cn.Open();
+            using (SqlCommand cmd = new SqlCommand(sql, cn))
+            {
+                cmd.Parameters.Add("@mailid", SqlDbType.VarChar).Value = m.Mails;
+                cmd.Parameters.Add("@timestamp", SqlDbType.Time).Value = m.Time;
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+            }
+            return "MailConfiguration Successfull!!!";
+        }
     }
 }

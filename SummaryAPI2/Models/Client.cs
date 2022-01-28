@@ -56,4 +56,9 @@ namespace SummaryAPI2.Models
         public string Message { get; set; }
         public string Filename { get; set; }
     }
+    public class MailConfig
+    {
+        public string Mails { get; set; }
+        public TimeSpan Time { get; set; }
+    }
 }
