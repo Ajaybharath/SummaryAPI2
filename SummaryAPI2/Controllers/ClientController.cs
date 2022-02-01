@@ -11,6 +11,13 @@ using System.Web.Http;
 using System.Net.Mail;
 using System.Web.Http.Cors;
 using System.IO;
+using System.Management;
+using Amazon.CloudWatch;
+using Amazon;
+using Amazon.CloudWatch.Model;
+using System.Net.Http;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace SummaryAPI2.Controllers
 {
@@ -437,7 +444,8 @@ namespace SummaryAPI2.Controllers
                 string[] mails = ds.Tables[0].AsEnumerable().Select(x => x[1].ToString()).ToArray();
                 MailMessage mailMsg = new MailMessage();
                 mailMsg.From = new MailAddress(ConfigurationManager.AppSettings["emailId"].ToString(), "IB IoT");
-                /*string[] mails = v.MailIds.Split(',')*/;
+                /*string[] mails = v.MailIds.Split(',')*/
+                ;
                 foreach (string mail in mails)
                 {
                     mailMsg.To.Add(new MailAddress(mail));
@@ -485,5 +493,128 @@ namespace SummaryAPI2.Controllers
             }
             return "MailConfiguration Successfull!!!";
         }
+        [Route("memory")]
+        [HttpGet]
+        [Obsolete]
+        public dynamic Memorymethod()
+        {
+            try
+            {
+                DataSet dsClientData = new DataSet();
+
+                using (SqlConnection cnMain = new SqlConnection("uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP"))
+                {
+                    SqlDataAdapter da = new SqlDataAdapter("select * from AWSDetails", cnMain);
+
+                    da.Fill(dsClientData);
+                }
+                List<CPU_Load> cPU_Loads = new List<CPU_Load>();
+                for (int sd = 0; sd < dsClientData.Tables[0].Rows.Count; sd++)
+                {
+                    CPU_Load d = new CPU_Load();
+                    try
+                    {
+                        d.DomainName = dsClientData.Tables[0].Rows[sd]["domain"].ToString();
+                        string AWSAccessKey = "AKIATOOKBXDCXL2GW63C";
+                        string AWSSecretKey = "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";
+
+                        var newRegion = RegionEndpoint.GetBySystemName(dsClientData.Tables[0].Rows[sd]["region"].ToString());
+
+                        IAmazonCloudWatch cw = Amazon.AWSClientFactory.CreateAmazonCloudWatchClient(AWSAccessKey, AWSSecretKey, newRegion);
+                        try
+                        {
+                            Dimension dim = new Dimension() { Name = "InstanceId", Value = dsClientData.Tables[0].Rows[sd]["instanceid"].ToString() };
+                            System.Collections.Generic.List<Dimension> dimensions = new List<Dimension>() { dim };
+
+
+                            string startTime1 = DateTimeOffset.Parse(DateTime.Now.AddMinutes(-2).ToString()).ToUniversalTime().ToString("s");
+
+                            GetMetricStatisticsRequest reg = new GetMetricStatisticsRequest()
+                            {
+                                MetricName = "CPUUtilization",
+                                Period = 60,
+                                Statistics = new System.Collections.Generic.List<string>() { "Average" },
+                                Dimensions = dimensions,
+                                Namespace = "AWS/EC2",
+                                EndTime = DateTime.Now,
+                                StartTime = Convert.ToDateTime(startTime1)
+                            };
+
+                            var points = cw.GetMetricStatistics(reg).GetMetricStatisticsResult.Datapoints.OrderBy(p => p.Timestamp);
+
+
+                            foreach (var p in points)
+                            {
+                                d.cpu_used = Math.Round(p.Average, 2).ToString();
+                                d.timestamp = (p.Timestamp).ToString();
+                            }
+
+                        }
+                        catch (Amazon.CloudWatch.AmazonCloudWatchException ex)
+                        {
+                            if (ex.ErrorCode.Equals("OptInRequired"))
+                                throw new Exception("You are not signed in for Amazon EC2.");
+                            else
+                                throw;
+                        }
+
+                        //PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+                        //dynamic firstValue = cpuCounter.NextValue();
+                        //System.Threading.Thread.Sleep(500);
+                        //firstValue = cpuCounter.NextValue();
+
+                        //d.cpu_used = Math.Round(firstValue, 0).ToString();
+                        //d.timestamp = DateTime.Now.ToString();
+
+                        //PerformanceCounter ramCounter;
+                        //ramCounter = new PerformanceCounter("Memory", "Available MBytes");
+                        //dynamic memory = ramCounter.NextValue();
+                        //d.memoryused = (8 - Math.Round((memory / 1000), 1)).ToString() + "GB";
+
+                        //var wmiObject = new ManagementObjectSearcher("select * from Win32_OperatingSystem");
+
+                        //var memoryValues = wmiObject.Get().Cast<ManagementObject>().Select(mo => new
+                        //{
+                        //    FreePhysicalMemory = Double.Parse(mo["FreePhysicalMemory"].ToString()),
+                        //    TotalVisibleMemorySize = Double.Parse(mo["TotalVisibleMemorySize"].ToString())
+                        //}).FirstOrDefault();
+
+                        //if (memoryValues != null)
+                        //{
+                        //    var percent = ((memoryValues.TotalVisibleMemorySize - memoryValues.FreePhysicalMemory) / memoryValues.TotalVisibleMemorySize) * 100;
+                        //    d.memoryused = Math.Round(percent, 2).ToString();
+
+                        //}
+                        //RamDetails rd = new RamDetails();
+                        string jsonString = "";
+                        string URL = "http://adminiot.iotsolution.net/RamUsageAPI/RamUsage/Server_Ram";
+                        //string URL = "https://localhost:44389/Ram_Usage/memory";
+                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
+                        request.Method = "GET";
+                        request.ContentType = "application/json";
+
+                        WebResponse response = request.GetResponse();
+                        StreamReader sr = new StreamReader(response.GetResponseStream());
+                        jsonString = sr.ReadToEnd();
+                        sr.Close();
+                        dynamic stuff = JsonConvert.DeserializeObject(jsonString);
+                        //dynamic stuff = JsonConvert.DeserializeObject<RamDetails>(jsonString);
+                        var ram = stuff.RamUsage.Value;
+                        cPU_Loads.Add(d);
+                    }
+                    catch (Exception ex)
+                    {
+                        return ex.Message;
+                    }
+                }
+                return cPU_Loads;
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
+
+
     }
 }

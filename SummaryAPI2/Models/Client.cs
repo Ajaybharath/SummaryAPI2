@@ -20,7 +20,13 @@ namespace SummaryAPI2.Models
     {
         public List<clientDetails> details { get; set; }
     }
-
+    public class CPU_Load
+    {
+        public string DomainName { get; set; }
+        public string cpu_used { get; set; }
+        public string memoryused { get; set; }
+        public string timestamp { get; set; }
+    }
     public class clientDetails
     {
         public string domain { get; set; }
