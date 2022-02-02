@@ -519,7 +519,6 @@ namespace SummaryAPI2.Controllers
                         string AWSSecretKey = "zNn6mTxtJK9IgxwaljnyrPULCSYMgD0QW5YFJgjr";
 
                         var newRegion = RegionEndpoint.GetBySystemName(dsClientData.Tables[0].Rows[sd]["region"].ToString());
-
                         IAmazonCloudWatch cw = Amazon.AWSClientFactory.CreateAmazonCloudWatchClient(AWSAccessKey, AWSSecretKey, newRegion);
                         try
                         {
@@ -587,7 +586,7 @@ namespace SummaryAPI2.Controllers
                         //}
                         //RamDetails rd = new RamDetails();
                         string jsonString = "";
-                        string URL = "http://adminiot.iotsolution.net/RamUsageAPI/RamUsage/Server_Ram";
+                        string URL = "https://adminiot.iotsolution.net/RamUsage_API/RamUsage/Server_Ram";
                         //string URL = "https://localhost:44389/Ram_Usage/memory";
                         HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
                         request.Method = "GET";
@@ -600,6 +599,7 @@ namespace SummaryAPI2.Controllers
                         dynamic stuff = JsonConvert.DeserializeObject(jsonString);
                         //dynamic stuff = JsonConvert.DeserializeObject<RamDetails>(jsonString);
                         var ram = stuff.RamUsage.Value;
+                        d.memoryused = ram;
                         cPU_Loads.Add(d);
                     }
                     catch (Exception ex)
