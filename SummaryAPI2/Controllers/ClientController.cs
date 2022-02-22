@@ -265,7 +265,7 @@ namespace SummaryAPI2.Controllers
                 string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
                 if (c.uid == "idea" && c.pwd == "bytes")
                 {
-                    string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "ajaybharath");
+                    string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
 
                     SqlConnection cn = new SqlConnection(con);
                     SqlDataAdapter da1 = new SqlDataAdapter("select * from centralcontrol", cn);
@@ -404,6 +404,21 @@ namespace SummaryAPI2.Controllers
                                                 lstclientData[pd].Good = goodVal;
                                                 lstclientData[pd].Warning = warningVal;
                                                 lstclientData[pd].Critical = criticalVal;
+                                                string reportPercent;
+                                                double report = Convert.ToDouble(dsReporting.Tables[0].Rows[0]["Reporting"]);
+                                                double tot = Convert.ToDouble(dsReporting.Tables[0].Rows[0]["Reporting"]) + Convert.ToDouble(dsNotReporting.Tables[0].Rows[0]["notReporting"]);
+                                                if (Convert.ToInt32(dsReporting.Tables[0].Rows[0]["Reporting"]) == 0 || Convert.ToInt32(dsReporting.Tables[0].Rows[0]["Reporting"]) + Convert.ToInt32(dsNotReporting.Tables[0].Rows[0]["notReporting"]) == 0)
+                                                {
+                                                    lstclientData[pd].ReportingPercent = "0";
+                                                    reportPercent = "0";
+                                                }
+                                                else
+                                                {
+                                                    lstclientData[pd].ReportingPercent = Math.Round((report / tot) * 100).ToString();
+                                                    reportPercent = Math.Round((report / tot) * 100).ToString();
+                                                }
+                                                lstclientData[pd].Devices = $"{report} / {tot}";
+                                                lstclientData[pd].ReportingTot = $"{report} / {tot} ({reportPercent}%)";
                                             }
                                         }
                                     }
@@ -481,7 +496,7 @@ namespace SummaryAPI2.Controllers
         public string SaveMail(MailConfig m)
         {
             string sql = "insert into mails(MailId,Timestamp) values(@mailid,@timestamp)";
-            string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "ajaybharath");
+            string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
             SqlConnection cn = new SqlConnection(con);
             cn.Open();
             using (SqlCommand cmd = new SqlCommand(sql, cn))
@@ -586,6 +601,7 @@ namespace SummaryAPI2.Controllers
                         //}
                         //RamDetails rd = new RamDetails();
                         string jsonString = "";
+                        //string URL = $"https://adminiot.{d.DomainName}.net/RamUsage_API/RamUsage/Server_Ram";
                         string URL = "https://adminiot.iotsolution.net/RamUsage_API/RamUsage/Server_Ram";
                         //string URL = "https://localhost:44389/Ram_Usage/memory";
                         HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);

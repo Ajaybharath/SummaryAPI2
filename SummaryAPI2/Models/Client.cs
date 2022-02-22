@@ -50,11 +50,14 @@ namespace SummaryAPI2.Models
         public string subDomain { get; set; }
         public string totalDevice { get; set; }
         public string reporting { get; set; }
+        public string ReportingTot { get; set; }
         public string notReporting { get; set; }
         public string portal { get; set; }
         public string Good { get; set; }
         public string Warning { get; set; }
         public string Critical { get; set; }
+        public string Devices { get; set; }
+        public string ReportingPercent { get; set; }
     }
     public class MailInput
     {
