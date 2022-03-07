@@ -255,6 +255,20 @@ namespace SummaryAPI2.Controllers
         }
 
         [HttpPost]
+        [Route("Access")]
+        public dynamic Login()
+        {
+            string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
+
+            SqlConnection cn = new SqlConnection(con);
+            SqlDataAdapter da1 = new SqlDataAdapter("select top 1 * from AccessKeyTable order by slno desc", cn);
+            DataSet ds = new DataSet();
+            da1.Fill(ds);
+            string accesskey = ds.Tables[0].AsEnumerable().Select(x => x["access"].ToString()).FirstOrDefault();
+            return accesskey;
+        }
+
+        [HttpPost]
         [Route("ClientData")]
         public dynamic getClientData(Client c)
         {
@@ -630,7 +644,5 @@ namespace SummaryAPI2.Controllers
                 return ex.Message;
             }
         }
-
-
     }
 }
