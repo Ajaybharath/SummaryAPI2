@@ -27,6 +27,7 @@ namespace SummaryAPI2.Controllers
     {
         public string goodVal, warningVal, criticalVal;
         public int goodCount, warningCount, criticalCount;
+        string[] skipSD;
         [HttpPost]
         [Route("Details")]
         public dynamic get_clientDetails(Client c)
@@ -272,15 +273,69 @@ namespace SummaryAPI2.Controllers
         [Route("ClientData")]
         public dynamic getClientData(Client c)
         {
-            List<clientData> lstclientData = new List<clientData>();
+            //Add new client name 
+            skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
+            string conSqlMain1 = string.Empty;
+            //string conSqlCentral = string.Empty;
+            string subDomain1 = string.Empty;
+            for (int i = 1; i < 10; i++)
+            {
+                try
+                {
+                    conSqlMain1 = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString" + i]);
+                    DataSet clientsData = new DataSet();
+                    using (SqlConnection cnMain = new SqlConnection(conSqlMain1))
+                    {
+                        SqlDataAdapter da = new SqlDataAdapter("select * from clientdetails", cnMain);
+                        da.Fill(clientsData);
+                    }
+                    SqlConnection connection = new SqlConnection("uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP");
+                    SqlCommand sqlCommand = new SqlCommand("proc_ClientData", connection);
+                    sqlCommand.CommandType = CommandType.StoredProcedure;
 
+                    for (int cd = 0; cd < clientsData.Tables[0].Rows.Count; cd++)
+                    {
+                        connection.Open();
+                        sqlCommand.Parameters.Clear();
+                        subDomain1 = Convert.ToString(clientsData.Tables[0].Rows[cd]["DomainName"]);
+                        if (Array.IndexOf(skipSD, subDomain1) == -1)
+                        {
+                            sqlCommand.Parameters.Add("Name",SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ClientName"];
+                            //if (subDomain1.ToString() == "vignaninstruments")
+                            //{
+                            //    sqlCommand.Parameters.Add("Subdomain",SqlDbType.VarChar).Value = "web";
+                            //}
+                            //else
+                            //{
+                            //    sqlCommand.Parameters.Add("Subdomain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainName"];
+                            //}
+                            sqlCommand.Parameters.Add("Subdomain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainName"];
+                            sqlCommand.Parameters.Add("domain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["IoTDomain"];
+                            sqlCommand.Parameters.Add("APIListener", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ListenerURL"];
+                            sqlCommand.Parameters.Add("MQTTListenerTopic", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["mqtt_topic"];
+                            sqlCommand.Parameters.Add("portalurl", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainURL"];
+                            sqlCommand.ExecuteNonQuery();
+                        }
+                        connection.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ex = null;
+
+                    break;
+                }
+            }
+            
+            
+            List<clientData> lstclientData = new List<clientData>();
             try
             {
                 string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
                 if (c.uid == "idea" && c.pwd == "bytes")
                 {
-                    string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
-
+                    //string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
+                    string con = "uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP";
                     SqlConnection cn = new SqlConnection(con);
                     SqlDataAdapter da1 = new SqlDataAdapter("select * from centralcontrol", cn);
                     DataSet ds = new DataSet();
@@ -643,6 +698,16 @@ namespace SummaryAPI2.Controllers
             {
                 return ex.Message;
             }
+        }
+        [HttpGet]
+        [Route("SMSTOKEN")]
+        public string smstokens()
+        {
+            HttpClient clientCall = new HttpClient();
+            HttpResponseMessage responseMessage = clientCall.GetAsync("https://control.msg91.com/api/balance.php?authkey=288771Alcs1Nmue5d4be4d2&type=4").Result;
+            //string SmsTokens = responseMessage.Content.ReadAsStringAsync().Result;
+            string SmsTokens = "499";
+            return SmsTokens;
         }
     }
 }
