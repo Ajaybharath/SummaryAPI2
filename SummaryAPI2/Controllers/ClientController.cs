@@ -301,14 +301,7 @@ namespace SummaryAPI2.Controllers
                         if (Array.IndexOf(skipSD, subDomain1) == -1)
                         {
                             sqlCommand.Parameters.Add("Name",SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ClientName"];
-                            //if (subDomain1.ToString() == "vignaninstruments")
-                            //{
-                            //    sqlCommand.Parameters.Add("Subdomain",SqlDbType.VarChar).Value = "web";
-                            //}
-                            //else
-                            //{
-                            //    sqlCommand.Parameters.Add("Subdomain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainName"];
-                            //}
+                            //sqlCommand.Parameters.Add("Subdomain",SqlDbType.VarChar).Value = subDomain1.ToString() == "vignaninstruments" ? "web" : clientsData.Tables[0].Rows[cd]["DomainName"];
                             sqlCommand.Parameters.Add("Subdomain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainName"];
                             sqlCommand.Parameters.Add("domain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["IoTDomain"];
                             sqlCommand.Parameters.Add("APIListener", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ListenerURL"];
@@ -334,8 +327,8 @@ namespace SummaryAPI2.Controllers
                 string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
                 if (c.uid == "idea" && c.pwd == "bytes")
                 {
-                    //string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
-                    string con = "uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP";
+                    string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
+                    //string con = "uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP";
                     SqlConnection cn = new SqlConnection(con);
                     SqlDataAdapter da1 = new SqlDataAdapter("select * from centralcontrol", cn);
                     DataSet ds = new DataSet();
@@ -366,17 +359,11 @@ namespace SummaryAPI2.Controllers
                             using (SqlConnection cnMain = new SqlConnection(conSqlMain))
                             {
                                 SqlDataAdapter da = new SqlDataAdapter("select DomainName,IoTDomain from clientdetails", cnMain);
-
                                 da.Fill(dsClientData);
                             }
-
-
                             for (int sd = 0; sd < dsClientData.Tables[0].Rows.Count; sd++)
                             {
-
                                 subDomain = Convert.ToString(dsClientData.Tables[0].Rows[sd]["DomainName"]);
-
-
                                 conSqlSub = conSqlMain.Replace("IoTMainData", subDomain);
 
                                 if (Array.IndexOf(skipSD, subDomain) == -1)
@@ -524,12 +511,9 @@ namespace SummaryAPI2.Controllers
                 SqlDataAdapter da1 = new SqlDataAdapter("select * from Mails", cn);
                 DataSet ds = new DataSet();
                 da1.Fill(ds);
-                // var m = ds.Tables[0].AsEnumerable();
                 string[] mails = ds.Tables[0].AsEnumerable().Select(x => x[1].ToString()).ToArray();
                 MailMessage mailMsg = new MailMessage();
                 mailMsg.From = new MailAddress(ConfigurationManager.AppSettings["emailId"].ToString(), "IB IoT");
-                /*string[] mails = v.MailIds.Split(',')*/
-                ;
                 foreach (string mail in mails)
                 {
                     mailMsg.To.Add(new MailAddress(mail));
@@ -538,10 +522,7 @@ namespace SummaryAPI2.Controllers
                 mailMsg.Body = v.Message;
                 string filename = v.Filename;
                 Thread.Sleep(10000);
-                //change path accordingly
-                //string filePath = "C:/Users/Admin/Downloads/" + filename;
                 string userPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                //string userPath = Environment.GetEnvironmentVariable("userprofile");
                 string filePath = $"{userPath}/Downloads/" + filename;
                 string fileName = filePath.Split('/')[filePath.Split('/').Length - 1];
                 byte[] bytes = File.ReadAllBytes(filePath);
@@ -552,7 +533,6 @@ namespace SummaryAPI2.Controllers
                 smtp.Credentials = new NetworkCredential(ConfigurationManager.AppSettings["emailId"].ToString(), ConfigurationManager.AppSettings["emailPwd"].ToString());
                 smtp.EnableSsl = true;
                 smtp.Send(mailMsg);
-                // mailMsg.To.Clear();
                 return "mail sent";
             }
             catch (Exception ex)
@@ -585,11 +565,9 @@ namespace SummaryAPI2.Controllers
             try
             {
                 DataSet dsClientData = new DataSet();
-
                 using (SqlConnection cnMain = new SqlConnection("uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP"))
                 {
                     SqlDataAdapter da = new SqlDataAdapter("select * from AWSDetails", cnMain);
-
                     da.Fill(dsClientData);
                 }
                 List<CPU_Load> cPU_Loads = new List<CPU_Load>();
@@ -601,17 +579,13 @@ namespace SummaryAPI2.Controllers
                         d.DomainName = dsClientData.Tables[0].Rows[sd]["domain"].ToString();
                         string AWSAccessKey = "AKIATOOKBXDCXL2GW63C";
                         string AWSSecretKey = "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";
-
                         var newRegion = RegionEndpoint.GetBySystemName(dsClientData.Tables[0].Rows[sd]["region"].ToString());
                         IAmazonCloudWatch cw = Amazon.AWSClientFactory.CreateAmazonCloudWatchClient(AWSAccessKey, AWSSecretKey, newRegion);
                         try
                         {
                             Dimension dim = new Dimension() { Name = "InstanceId", Value = dsClientData.Tables[0].Rows[sd]["instanceid"].ToString() };
                             System.Collections.Generic.List<Dimension> dimensions = new List<Dimension>() { dim };
-
-
                             string startTime1 = DateTimeOffset.Parse(DateTime.Now.AddMinutes(-2).ToString()).ToUniversalTime().ToString("s");
-
                             GetMetricStatisticsRequest reg = new GetMetricStatisticsRequest()
                             {
                                 MetricName = "CPUUtilization",
@@ -622,16 +596,12 @@ namespace SummaryAPI2.Controllers
                                 EndTime = DateTime.Now,
                                 StartTime = Convert.ToDateTime(startTime1)
                             };
-
                             var points = cw.GetMetricStatistics(reg).GetMetricStatisticsResult.Datapoints.OrderBy(p => p.Timestamp);
-
-
                             foreach (var p in points)
                             {
                                 d.cpu_used = Math.Round(p.Average, 2).ToString();
                                 d.timestamp = (p.Timestamp).ToString();
                             }
-
                         }
                         catch (Amazon.CloudWatch.AmazonCloudWatchException ex)
                         {
@@ -676,7 +646,6 @@ namespace SummaryAPI2.Controllers
                         HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
                         request.Method = "GET";
                         request.ContentType = "application/json";
-
                         WebResponse response = request.GetResponse();
                         StreamReader sr = new StreamReader(response.GetResponseStream());
                         jsonString = sr.ReadToEnd();
@@ -705,8 +674,7 @@ namespace SummaryAPI2.Controllers
         {
             HttpClient clientCall = new HttpClient();
             HttpResponseMessage responseMessage = clientCall.GetAsync("https://control.msg91.com/api/balance.php?authkey=288771Alcs1Nmue5d4be4d2&type=4").Result;
-            //string SmsTokens = responseMessage.Content.ReadAsStringAsync().Result;
-            string SmsTokens = "499";
+            string SmsTokens = responseMessage.Content.ReadAsStringAsync().Result;
             return SmsTokens;
         }
     }
