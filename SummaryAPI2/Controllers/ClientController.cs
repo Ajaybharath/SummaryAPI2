@@ -273,52 +273,52 @@ namespace SummaryAPI2.Controllers
         [Route("ClientData")]
         public dynamic getClientData(Client c)
         {
-            //Add new client name 
-            skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
-            string conSqlMain1 = string.Empty;
-            //string conSqlCentral = string.Empty;
-            string subDomain1 = string.Empty;
-            for (int i = 1; i < 10; i++)
-            {
-                try
-                {
-                    conSqlMain1 = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString" + i]);
-                    DataSet clientsData = new DataSet();
-                    using (SqlConnection cnMain = new SqlConnection(conSqlMain1))
-                    {
-                        SqlDataAdapter da = new SqlDataAdapter("select * from clientdetails", cnMain);
-                        da.Fill(clientsData);
-                    }
-                    SqlConnection connection = new SqlConnection("uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP");
-                    SqlCommand sqlCommand = new SqlCommand("proc_ClientData", connection);
-                    sqlCommand.CommandType = CommandType.StoredProcedure;
+            ////Add new client name 
+            //skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
+            //string conSqlMain1 = string.Empty;
+            ////string conSqlCentral = string.Empty;
+            //string subDomain1 = string.Empty;
+            //for (int i = 1; i < 10; i++)
+            //{
+            //    try
+            //    {
+            //        conSqlMain1 = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString" + i]);
+            //        DataSet clientsData = new DataSet();
+            //        using (SqlConnection cnMain = new SqlConnection(conSqlMain1))
+            //        {
+            //            SqlDataAdapter da = new SqlDataAdapter("select * from clientdetails", cnMain);
+            //            da.Fill(clientsData);
+            //        }
+            //        SqlConnection connection = new SqlConnection("uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP");
+            //        SqlCommand sqlCommand = new SqlCommand("proc_ClientData", connection);
+            //        sqlCommand.CommandType = CommandType.StoredProcedure;
 
-                    for (int cd = 0; cd < clientsData.Tables[0].Rows.Count; cd++)
-                    {
-                        connection.Open();
-                        sqlCommand.Parameters.Clear();
-                        subDomain1 = Convert.ToString(clientsData.Tables[0].Rows[cd]["DomainName"]);
-                        if (Array.IndexOf(skipSD, subDomain1) == -1)
-                        {
-                            sqlCommand.Parameters.Add("Name",SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ClientName"];
-                            //sqlCommand.Parameters.Add("Subdomain",SqlDbType.VarChar).Value = subDomain1.ToString() == "vignaninstruments" ? "web" : clientsData.Tables[0].Rows[cd]["DomainName"];
-                            sqlCommand.Parameters.Add("Subdomain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainName"];
-                            sqlCommand.Parameters.Add("domain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["IoTDomain"];
-                            sqlCommand.Parameters.Add("APIListener", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ListenerURL"];
-                            sqlCommand.Parameters.Add("MQTTListenerTopic", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["mqtt_topic"];
-                            sqlCommand.Parameters.Add("portalurl", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainURL"];
-                            sqlCommand.ExecuteNonQuery();
-                        }
-                        connection.Close();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ex = null;
+            //        for (int cd = 0; cd < clientsData.Tables[0].Rows.Count; cd++)
+            //        {
+            //            connection.Open();
+            //            sqlCommand.Parameters.Clear();
+            //            subDomain1 = Convert.ToString(clientsData.Tables[0].Rows[cd]["DomainName"]);
+            //            if (Array.IndexOf(skipSD, subDomain1) == -1)
+            //            {
+            //                sqlCommand.Parameters.Add("Name",SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ClientName"];
+            //                //sqlCommand.Parameters.Add("Subdomain",SqlDbType.VarChar).Value = subDomain1.ToString() == "vignaninstruments" ? "web" : clientsData.Tables[0].Rows[cd]["DomainName"];
+            //                sqlCommand.Parameters.Add("Subdomain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainName"];
+            //                sqlCommand.Parameters.Add("domain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["IoTDomain"];
+            //                sqlCommand.Parameters.Add("APIListener", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ListenerURL"];
+            //                sqlCommand.Parameters.Add("MQTTListenerTopic", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["mqtt_topic"];
+            //                sqlCommand.Parameters.Add("portalurl", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainURL"];
+            //                sqlCommand.ExecuteNonQuery();
+            //            }
+            //            connection.Close();
+            //        }
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        ex = null;
 
-                    break;
-                }
-            }
+            //        break;
+            //    }
+            //}
             
             
             List<clientData> lstclientData = new List<clientData>();
@@ -492,13 +492,12 @@ namespace SummaryAPI2.Controllers
                     }
                 }
             }
-
             catch (Exception ex)
             {
                 ex = null;
             }
+            lstclientData.RemoveAll(x => x.totalDevice == null || x.totalDevice == string.Empty);
             return lstclientData;
-
         }
         [HttpPost]
         [Route("SendMail")]

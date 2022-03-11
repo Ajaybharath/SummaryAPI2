@@ -58,6 +58,11 @@ namespace SummaryAPI2.Models
         public string Critical { get; set; }
         public string Devices { get; set; }
         public string ReportingPercent { get; set; }
+
+        internal void Remove(string v)
+        {
+            throw new NotImplementedException();
+        }
     }
     public class MailInput
     {
