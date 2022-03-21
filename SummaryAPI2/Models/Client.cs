@@ -5,6 +5,12 @@ using System.Web;
 
 namespace SummaryAPI2.Models
 {
+    public class sslDetails
+    {
+        public string domain { get; set; }
+        public string expTime { get; set; }
+        public string severity { get; set; }
+    }
     public class Client
     {
         public string uid { get; set; }
@@ -74,5 +80,10 @@ namespace SummaryAPI2.Models
     {
         public string Mails { get; set; }
         public TimeSpan Time { get; set; }
+    }
+    public class Login
+    {
+        public string Password { get; set; }
+        public string UserId { get; set; }
     }
 }

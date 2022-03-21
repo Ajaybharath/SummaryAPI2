@@ -18,6 +18,7 @@ using Amazon.CloudWatch.Model;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.Text;
+using System.Security.Cryptography.X509Certificates;
 
 namespace SummaryAPI2.Controllers
 {
@@ -259,14 +260,28 @@ namespace SummaryAPI2.Controllers
         [Route("Access")]
         public dynamic Login()
         {
-            string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
-
-            SqlConnection cn = new SqlConnection(con);
-            SqlDataAdapter da1 = new SqlDataAdapter("select top 1 * from AccessKeyTable order by slno desc", cn);
-            DataSet ds = new DataSet();
-            da1.Fill(ds);
-            string accesskey = ds.Tables[0].AsEnumerable().Select(x => x["access"].ToString()).FirstOrDefault();
-            return accesskey;
+            Login login = new Login();
+            try
+            {
+                string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
+                SqlDataAdapter da1; DataSet ds;
+                SqlConnection cn = new SqlConnection(con);
+                da1 = new SqlDataAdapter("select top 1 * from AccessKeyTable order by slno desc", cn);
+                ds = new DataSet();
+                da1.Fill(ds);
+                string accesskey = ds.Tables[0].AsEnumerable().Select(x => x["access"].ToString()).FirstOrDefault();
+                login.Password = accesskey;
+                da1 = new SqlDataAdapter("select * from Portal_UserId", cn);
+                ds = new DataSet();
+                da1.Fill(ds);
+                string UserId = ds.Tables[0].AsEnumerable().Select(x => x["UserId"].ToString()).FirstOrDefault();
+                login.UserId = UserId;
+            }
+            catch (Exception ex)
+            {
+                ex = null;
+            }
+            return login;
         }
 
         [HttpPost]
@@ -274,53 +289,54 @@ namespace SummaryAPI2.Controllers
         public dynamic getClientData(Client c)
         {
             ////Add new client name 
-            //skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
-            //string conSqlMain1 = string.Empty;
-            ////string conSqlCentral = string.Empty;
-            //string subDomain1 = string.Empty;
-            //for (int i = 1; i < 10; i++)
-            //{
-            //    try
-            //    {
-            //        conSqlMain1 = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString" + i]);
-            //        DataSet clientsData = new DataSet();
-            //        using (SqlConnection cnMain = new SqlConnection(conSqlMain1))
-            //        {
-            //            SqlDataAdapter da = new SqlDataAdapter("select * from clientdetails", cnMain);
-            //            da.Fill(clientsData);
-            //        }
-            //        SqlConnection connection = new SqlConnection("uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP");
-            //        SqlCommand sqlCommand = new SqlCommand("proc_ClientData", connection);
-            //        sqlCommand.CommandType = CommandType.StoredProcedure;
+            skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
+            string conSqlMain1 = string.Empty;
+            //string conSqlCentral = string.Empty;
+            string subDomain1 = string.Empty;
+            for (int i = 1; i < 10; i++)
+            {
+                try
+                {
+                    conSqlMain1 = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString" + i]);
+                    DataSet clientsData = new DataSet();
+                    using (SqlConnection cnMain = new SqlConnection(conSqlMain1))
+                    {
+                        SqlDataAdapter da = new SqlDataAdapter("select * from clientdetails", cnMain);
+                        da.Fill(clientsData);
+                    }
+                    string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
+                    SqlConnection connection = new SqlConnection(con);//"uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP"
+                    SqlCommand sqlCommand = new SqlCommand("Insert_centralcontrol", connection);
+                    sqlCommand.CommandType = CommandType.StoredProcedure;
 
-            //        for (int cd = 0; cd < clientsData.Tables[0].Rows.Count; cd++)
-            //        {
-            //            connection.Open();
-            //            sqlCommand.Parameters.Clear();
-            //            subDomain1 = Convert.ToString(clientsData.Tables[0].Rows[cd]["DomainName"]);
-            //            if (Array.IndexOf(skipSD, subDomain1) == -1)
-            //            {
-            //                sqlCommand.Parameters.Add("Name",SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ClientName"];
-            //                //sqlCommand.Parameters.Add("Subdomain",SqlDbType.VarChar).Value = subDomain1.ToString() == "vignaninstruments" ? "web" : clientsData.Tables[0].Rows[cd]["DomainName"];
-            //                sqlCommand.Parameters.Add("Subdomain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainName"];
-            //                sqlCommand.Parameters.Add("domain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["IoTDomain"];
-            //                sqlCommand.Parameters.Add("APIListener", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ListenerURL"];
-            //                sqlCommand.Parameters.Add("MQTTListenerTopic", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["mqtt_topic"];
-            //                sqlCommand.Parameters.Add("portalurl", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainURL"];
-            //                sqlCommand.ExecuteNonQuery();
-            //            }
-            //            connection.Close();
-            //        }
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        ex = null;
+                    for (int cd = 0; cd < clientsData.Tables[0].Rows.Count; cd++)
+                    {
+                        connection.Open();
+                        sqlCommand.Parameters.Clear();
+                        subDomain1 = Convert.ToString(clientsData.Tables[0].Rows[cd]["DomainName"]);
+                        if (Array.IndexOf(skipSD, subDomain1) == -1)
+                        {
+                            sqlCommand.Parameters.Add("Name", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ClientName"];
+                            //sqlCommand.Parameters.Add("Subdomain",SqlDbType.VarChar).Value = subDomain1.ToString() == "vignaninstruments" ? "web" : clientsData.Tables[0].Rows[cd]["DomainName"];
+                            sqlCommand.Parameters.Add("Subdomain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainName"];
+                            sqlCommand.Parameters.Add("domain", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["IoTDomain"];
+                            sqlCommand.Parameters.Add("APIListener", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ListenerURL"];
+                            sqlCommand.Parameters.Add("MQTTListenerTopic", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["mqtt_topic"];
+                            sqlCommand.Parameters.Add("portalurl", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["DomainURL"];
+                            sqlCommand.ExecuteNonQuery();
+                        }
+                        connection.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ex = null;
 
-            //        break;
-            //    }
-            //}
-            
-            
+                    break;
+                }
+            }
+
+
             List<clientData> lstclientData = new List<clientData>();
             try
             {
@@ -496,7 +512,10 @@ namespace SummaryAPI2.Controllers
             {
                 ex = null;
             }
-            lstclientData.RemoveAll(x => x.totalDevice == null || x.totalDevice == string.Empty);
+            lstclientData.RemoveAll(x => x.totalDevice == null || x.totalDevice == string.Empty || x.subDomain == "airflowcontrol" && x.domain == "dgtrak.online");
+            //lstclientData.RemoveAll(x => x.subDomain == "airflowcontrol" && x.domain == "dgtrak.online");
+            //lstclientData.GroupBy(x => x.subDomain).Distinct();
+
             return lstclientData;
         }
         [HttpPost]
@@ -543,7 +562,8 @@ namespace SummaryAPI2.Controllers
         [Route("MailConfig")]
         public string SaveMail(MailConfig m)
         {
-            string sql = "insert into mails(MailId,Timestamp) values(@mailid,@timestamp)";
+            string sql = "update mails set MailId=@mailid,Timestamp=@timestamp";
+            //string sql = "insert into mails(MailId,Timestamp) values(@mailid,@timestamp)";
             string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
             SqlConnection cn = new SqlConnection(con);
             cn.Open();
@@ -669,12 +689,69 @@ namespace SummaryAPI2.Controllers
         }
         [HttpGet]
         [Route("SMSTOKEN")]
-        public string smstokens()
+        public dynamic smstokens()
         {
+            int count = 0;
+            TryAgain:
             HttpClient clientCall = new HttpClient();
             HttpResponseMessage responseMessage = clientCall.GetAsync("https://control.msg91.com/api/balance.php?authkey=288771Alcs1Nmue5d4be4d2&type=4").Result;
             string SmsTokens = responseMessage.Content.ReadAsStringAsync().Result;
-            return SmsTokens;
+            if (SmsTokens.All(char.IsDigit)) //SmsTokens.Contains("418")
+            {
+                return SmsTokens;
+            }
+            else
+            {
+                if (count == 3)
+                {
+                    return "N.A";
+                }
+                count++;
+                Thread.Sleep(1000);
+                goto TryAgain;
+            }
+
+        }
+
+        [HttpGet]
+        [Route("SSLExpDate")]
+        public dynamic getSSLExpDate()
+        {
+            string[] SSLdomainNames = Convert.ToString(ConfigurationManager.AppSettings["domainsforsll"]).Split(',');
+            //sslInfo _sslinfo = new sslInfo();
+            List<sslDetails> ssdLst = new List<sslDetails>();
+            for (int i = 0; i < SSLdomainNames.Length; i++)
+            {
+                if (SSLdomainNames[i] != "")
+                {
+
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://" + SSLdomainNames[i] + "/");
+                    HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                    response.Close(); //retrieve the ssl cert and assign it to an X509Certificate object
+                    X509Certificate cert = request.ServicePoint.Certificate; //convert the X509Certificate to an X509Certificate2 object by passing it into the constructor
+                    X509Certificate2 cert2 = new X509Certificate2(cert); //string cn = cert2.GetIssuerName();
+                    string cedate = Convert.ToDateTime(cert2.GetExpirationDateString()).ToString("dd-MM-yyyy HH:mm");
+                    string cpub = cert2.GetPublicKeyString(); TimeSpan ts = new TimeSpan(); ts = Convert.ToDateTime(cert2.GetExpirationDateString()) - DateTime.Now; sslDetails sslD = new sslDetails(); sslD.domain = SSLdomainNames[i].Split('.')[1] + "." + SSLdomainNames[i].Split('.')[2];
+                    sslD.expTime = cedate;
+                    if (ts.Days > 10)
+                    {
+                        sslD.severity = "low";
+                    }
+                    else
+                    if (ts.Days > 5 && ts.Days < 10)
+                    {
+                        sslD.severity = "Medium";
+                    }
+                    else
+                    {
+                        sslD.severity = "High";
+                    }
+                    ssdLst.Add(sslD);
+                }
+            }
+            //_sslinfo.sslInformation = new List<sslDetails>();
+            //_sslinfo.sslInformation = ssdLst; return _sslinfo;
+            return ssdLst;
         }
     }
 }
