@@ -733,12 +733,12 @@ namespace SummaryAPI2.Controllers
                     string cedate = Convert.ToDateTime(cert2.GetExpirationDateString()).ToString("dd-MM-yyyy HH:mm");
                     string cpub = cert2.GetPublicKeyString(); TimeSpan ts = new TimeSpan(); ts = Convert.ToDateTime(cert2.GetExpirationDateString()) - DateTime.Now; sslDetails sslD = new sslDetails(); sslD.domain = SSLdomainNames[i].Split('.')[1] + "." + SSLdomainNames[i].Split('.')[2];
                     sslD.expTime = cedate;
+                    //ts = Convert.ToDateTime(cert2.GetExpirationDateString()) -Convert.ToDateTime("3/21/2022 09:30:00");
                     if (ts.Days > 10)
                     {
                         sslD.severity = "low";
                     }
-                    else
-                    if (ts.Days > 5 && ts.Days < 10)
+                    else if (ts.Days > 5 && ts.Days <= 10)
                     {
                         sslD.severity = "Medium";
                     }
