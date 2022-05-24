@@ -2,9 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 
 namespace SummaryAPI2.Models
 {
+    
     public class sslDetails
     {
         public string domain { get; set; }
@@ -15,6 +19,22 @@ namespace SummaryAPI2.Models
     {
         public string uid { get; set; }
         public string pwd { get; set; }
+        public void ErrorLogs(string excepData,string exceptionAt)
+        {
+
+            //Exception Logins
+            string exceptionCon = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
+            SqlConnection exceptionsqlConnection = new SqlConnection(exceptionCon);
+            exceptionsqlConnection.Open();
+            using (SqlCommand command = new SqlCommand("proc_ExceptionDatainAPI", exceptionsqlConnection))
+            {
+                command.Parameters.Add("@Exception", SqlDbType.VarChar).Value = excepData;
+                command.Parameters.Add("@ExceptionAt", SqlDbType.VarChar).Value = exceptionAt;
+                command.CommandType = CommandType.StoredProcedure;
+                command.ExecuteNonQuery();
+            }
+            exceptionsqlConnection.Close();
+        }
     }
 
     public class reportTime
@@ -80,10 +100,12 @@ namespace SummaryAPI2.Models
     {
         public string Mails { get; set; }
         public TimeSpan Time { get; set; }
+        
     }
     public class Login
     {
         public string Password { get; set; }
         public string UserId { get; set; }
     }
+
 }

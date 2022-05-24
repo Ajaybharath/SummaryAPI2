@@ -295,6 +295,7 @@ namespace SummaryAPI2.Controllers
             string subDomain1 = string.Empty;
             for (int i = 1; i < 10; i++)
             {
+                //Inserting Clientsdetails Data into CentralizedDB if not Exists
                 try
                 {
                     conSqlMain1 = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString" + i]);
@@ -330,9 +331,18 @@ namespace SummaryAPI2.Controllers
                 }
                 catch (Exception ex)
                 {
-                    ex = null;
+                    if (conSqlMain1 != "")
+                    {
+                        c.ErrorLogs(ex.Message, "Inserting Clientsdetails Data into CentralizedDB if not Exists" + conSqlMain1);
+                        ex = null;
+                    }
+                    else if (conSqlMain1 == "")
+                    {
+                        c.ErrorLogs(ex.Message, "At Inserting Clientsdetails Data into CentralizedDB if not Exists due to Empty connection string" + conSqlMain1);
+                        ex = null;
+                        break;
+                    }
 
-                    break;
                 }
             }
 
@@ -340,9 +350,11 @@ namespace SummaryAPI2.Controllers
             List<clientData> lstclientData = new List<clientData>();
             try
             {
+                //getting summary details from centralizedDB
                 string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
                 if (c.uid == "idea" && c.pwd == "bytes")
                 {
+                    //CentralizedDB
                     string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
                     //string con = "uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP";
                     SqlConnection cn = new SqlConnection(con);
@@ -366,8 +378,10 @@ namespace SummaryAPI2.Controllers
                     //string goodVal, warningVal, criticalVal;
                     for (int i = 1; i < 10; i++)
                     {
+                        //DomainName,IoTDomain from clientdetails
                         try
                         {
+
                             List<clientDetails> lstClients = new List<clientDetails>();
                             conSqlMain = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString" + i]);
                             DataSet dsClientData = new DataSet();
@@ -384,6 +398,7 @@ namespace SummaryAPI2.Controllers
 
                                 if (Array.IndexOf(skipSD, subDomain) == -1)
                                 {
+                                    //Getting data from Each SubDomain dsNotReporting,dsReporting,dsLoginId
                                     try
                                     {
                                         DataSet dsReporting = new DataSet();
@@ -413,6 +428,7 @@ namespace SummaryAPI2.Controllers
 
                                         using (SqlConnection cnMain = new SqlConnection(conSqlSub))
                                         {
+                                            //getting Data from Each SubDomain Good,Warning and Critical
                                             try
                                             {
                                                 SqlDataAdapter da = new SqlDataAdapter("GET_LiveData_New", cnMain);
@@ -463,6 +479,7 @@ namespace SummaryAPI2.Controllers
                                             }
                                             catch (Exception exe)
                                             {
+                                                c.ErrorLogs(exe.Message, "getting Data from Each SubDomain Good,Warning and Critical" + conSqlSub);
                                                 exe = null;
                                             }
                                         }
@@ -496,6 +513,7 @@ namespace SummaryAPI2.Controllers
                                     }
                                     catch (Exception exI)
                                     {
+                                        c.ErrorLogs(exI.Message, "Getting data from Each SubDomain dsNotReporting,dsReporting,dsLoginId" + conSqlSub);
                                         exI = null;
                                     }
                                 }
@@ -503,20 +521,34 @@ namespace SummaryAPI2.Controllers
                         }
                         catch (Exception ex)
                         {
-                            ex = null;
+                            if (conSqlMain != "")
+                            {
+                                c.ErrorLogs(ex.Message, "DomainName,IoTDomain from clientdetails" + conSqlMain);
+                                ex = null;
+                            }
+                            else
+                            {
+                                c.ErrorLogs(ex.Message, "At DomainName,IoTDomain from clientdetails due to Empty connection string" + conSqlMain);
+                                ex = null;
+                               // break;
+                            }
+
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
+                c.ErrorLogs(ex.Message, "getting summary details from centralizedDB");
                 ex = null;
+
             }
             lstclientData.RemoveAll(x => x.totalDevice == null || x.totalDevice == string.Empty || x.subDomain == "airflowcontrol" && x.domain == "dgtrak.online");
             //lstclientData.RemoveAll(x => x.subDomain == "airflowcontrol" && x.domain == "dgtrak.online");
             //lstclientData.GroupBy(x => x.subDomain).Distinct();
 
             return lstclientData;
+
         }
         [HttpPost]
         [Route("SendMail")]
@@ -575,6 +607,7 @@ namespace SummaryAPI2.Controllers
                 cmd.ExecuteNonQuery();
             }
             return "MailConfiguration Successfull!!!";
+
         }
         [Route("memory")]
         [HttpGet]
@@ -596,12 +629,24 @@ namespace SummaryAPI2.Controllers
                     try
                     {
                         d.DomainName = dsClientData.Tables[0].Rows[sd]["domain"].ToString();
-                        string AWSAccessKey = "AKIATOOKBXDCXL2GW63C";
-                        string AWSSecretKey = "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";
+                        string AWSAccessKey, AWSSecretKey;
+                        if (d.DomainName == "subzeroiot.com")
+                        {
+                            AWSAccessKey = "AKIAXJT3T2E745CX6S2Q";//AKIATOOKBXDCYTSXOREY    aYjk4VPBFeEMikmZP1WM2sxjNaliX6fMaeJqRGVC
+                            AWSSecretKey = "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";
+                        }
+                        else
+                        {
+
+                            AWSAccessKey = "AKIATOOKBXDCYTSXOREY";//AKIATOOKBXDCYTSXOREY    aYjk4VPBFeEMikmZP1WM2sxjNaliX6fMaeJqRGVC
+                            AWSSecretKey = "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";
+                        }
+                        // Access Key ID: AKIAXJT3T2E745CX6S2Q.Access Key: VEjIH1Jo + rHz5VPig1aq2wNO1rqdGVeKD6vxG//k
                         var newRegion = RegionEndpoint.GetBySystemName(dsClientData.Tables[0].Rows[sd]["region"].ToString());
                         IAmazonCloudWatch cw = Amazon.AWSClientFactory.CreateAmazonCloudWatchClient(AWSAccessKey, AWSSecretKey, newRegion);
                         try
                         {
+                        First:
                             Dimension dim = new Dimension() { Name = "InstanceId", Value = dsClientData.Tables[0].Rows[sd]["instanceid"].ToString() };
                             System.Collections.Generic.List<Dimension> dimensions = new List<Dimension>() { dim };
                             string startTime1 = DateTimeOffset.Parse(DateTime.Now.AddMinutes(-2).ToString()).ToUniversalTime().ToString("s");
@@ -616,6 +661,10 @@ namespace SummaryAPI2.Controllers
                                 StartTime = Convert.ToDateTime(startTime1)
                             };
                             var points = cw.GetMetricStatistics(reg).GetMetricStatisticsResult.Datapoints.OrderBy(p => p.Timestamp);
+                            if (points.Count() == 0)
+                            {
+                                goto First;
+                            }
                             foreach (var p in points)
                             {
                                 d.cpu_used = Math.Round(p.Average, 2).ToString();
@@ -659,7 +708,11 @@ namespace SummaryAPI2.Controllers
                         //}
                         //RamDetails rd = new RamDetails();
                         string jsonString = "";
-                        //string URL = $"https://adminiot.{d.DomainName}.net/RamUsage_API/RamUsage/Server_Ram";
+                        //if ()
+                        //{
+
+                        //}
+                        // string URL = $"https://adminiot.{d.DomainName}/RamUsage_API/RamUsage/Server_Ram";
                         string URL = "https://adminiot.iotsolution.net/RamUsage_API/RamUsage/Server_Ram";
                         //string URL = "https://localhost:44389/Ram_Usage/memory";
                         HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
@@ -692,7 +745,7 @@ namespace SummaryAPI2.Controllers
         public dynamic smstokens()
         {
             int count = 0;
-            TryAgain:
+        TryAgain:
             HttpClient clientCall = new HttpClient();
             HttpResponseMessage responseMessage = clientCall.GetAsync("https://control.msg91.com/api/balance.php?authkey=288771Alcs1Nmue5d4be4d2&type=4").Result;
             string SmsTokens = responseMessage.Content.ReadAsStringAsync().Result;
@@ -707,7 +760,7 @@ namespace SummaryAPI2.Controllers
                     return "N.A";
                 }
                 count++;
-                Thread.Sleep(1000);
+                Thread.Sleep(800);
                 goto TryAgain;
             }
 
