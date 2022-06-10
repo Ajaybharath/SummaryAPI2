@@ -415,7 +415,6 @@ D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\roslyn\VBCSCompiler.exe
 D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\roslyn\VBCSCompiler.exe.config
 D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\Antlr3.Runtime.dll
 D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\AWSSDK.dll
-D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\Microsoft.AspNetCore.Cors.dll
 D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\Microsoft.AspNetCore.Http.Abstractions.dll
 D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\Microsoft.AspNetCore.Http.Extensions.dll
 D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\Microsoft.AspNetCore.Http.Features.dll
@@ -449,7 +448,6 @@ D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\System.Web.WebPages.dll
 D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\System.Web.WebPages.Razor.dll
 D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\WebGrease.dll
 D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\AWSSDK.pdb
-D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\Microsoft.AspNetCore.Cors.xml
 D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\Microsoft.AspNetCore.Http.Abstractions.xml
 D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\Microsoft.AspNetCore.Http.Extensions.xml
 D:\ProjectGit\SummaryAPI2\SummaryAPI2\bin\Microsoft.AspNetCore.Http.Features.xml

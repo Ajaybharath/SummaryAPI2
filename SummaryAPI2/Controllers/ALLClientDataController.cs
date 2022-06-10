@@ -22,135 +22,17 @@ using System.Web.Http.Cors;
 
 namespace SummaryAPI2.Controllers
 {
-//    [EnableCors("*", "*", "*")]
-    [RoutePrefix("API/Client")]
-    public class ClientController : ApiController
+    [RoutePrefix("API/TotalClientData")]
+    public class ALLClientDataController : ApiController
     {
         public string goodVal, warningVal, criticalVal;
         public int goodCount, warningCount, criticalCount;
-        string[] skipSD;
-        //[HttpPost]
-        //[Route("Details")]
-        //public dynamic get_clientDetails(Client c)
-        //{
-
-        //    List<clientDetails> lstClients = new List<clientDetails>();
-        //    string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
-
-        //    try
-        //    {
-        //        if (c.uid == "idea" && c.pwd == "bytes")
-        //        {
-
-
-        //            string conSqlMain = string.Empty;
-        //            string conSqlSub = string.Empty;
-        //            string subDomain = string.Empty;
-        //            string clientDetails = string.Empty;
-
-        //            for (int i = 1; i < 10; i++)
-        //            {
-        //                try
-        //                {
-
-        //                    conSqlMain = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString" + i]);
-        //                    // clientDetails = "uid=sa;pwd=Ide@123;database=AB;server=AJAYBHARATH\\SQLEXPRESS";
-        //                    DataSet dsClientData = new DataSet();
-
-        //                    using (SqlConnection cnMain = new SqlConnection(conSqlMain))
-        //                    {
-        //                        SqlDataAdapter da = new SqlDataAdapter("select DomainName,IoTDomain from clientdetails", cnMain);
-
-        //                        da.Fill(dsClientData);
-        //                    }
-
-
-        //                    for (int sd = 0; sd < dsClientData.Tables[0].Rows.Count; sd++)
-        //                    {
-        //                        clientDetails cD = new clientDetails();
-
-        //                        subDomain = Convert.ToString(dsClientData.Tables[0].Rows[sd]["DomainName"]);
-
-        //                        conSqlSub = conSqlMain.Replace("IoTMainData", subDomain);
-
-
-        //                        cD.domain = Convert.ToString(dsClientData.Tables[0].Rows[sd]["IoTDomain"]);
-        //                        cD.subDomain = subDomain;
-
-        //                        if (Array.IndexOf(skipSD, subDomain) == -1)
-        //                        {
-        //                            cD.reporting = "0";
-        //                            cD.notReporting = "0";
-
-        //                            try
-        //                            {
-        //                                DataSet dsReporting = new DataSet();
-        //                                DataSet dsNotReporting = new DataSet();
-        //                                DataSet dsRegions = new DataSet();
-
-        //                                using (SqlConnection cnMain = new SqlConnection(conSqlSub))
-        //                                {
-        //                                    SqlDataAdapter da = new SqlDataAdapter("select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'", cnMain);
-
-        //                                    da.Fill(dsNotReporting);
-        //                                }
-
-        //                                using (SqlConnection cnMain = new SqlConnection(conSqlSub))
-        //                                {
-        //                                    SqlDataAdapter da = new SqlDataAdapter("select count(*) as Reporting from sensordetails where isreporting = '1'", cnMain);
-
-        //                                    da.Fill(dsReporting);
-        //                                }
-
-
-        //                                cD.reporting = Convert.ToString(dsReporting.Tables[0].Rows[0]["Reporting"]);
-        //                                cD.notReporting = Convert.ToString(dsNotReporting.Tables[0].Rows[0]["notReporting"]);
-
-
-        //                                if (cD.subDomain == "vignaninstruments")
-        //                                {
-        //                                    cD.portal = "https://web.vlogdata.net/";
-        //                                }
-        //                                else
-        //                                {
-        //                                    cD.portal = "https://" + cD.subDomain + "." + cD.domain;
-        //                                }
-        //                            }
-        //                            catch (Exception exI)
-        //                            {
-        //                                exI = null;
-        //                            }
-
-        //                            cD.totalDevice = (Convert.ToInt32(cD.reporting) + Convert.ToInt32(cD.notReporting)).ToString();
-
-        //                            lstClients.Add(cD);
-        //                        }
-        //                    }
-
-        //                }
-        //                catch (Exception exFor)
-        //                {
-        //                    exFor = null;
-
-        //                    break;
-        //                }
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        ex = null;
-        //    }
-
-
-        //    return lstClients;
-
-        //}
-
+        string[] skipSDDD;
         [HttpPost]
-        [Route("regions")]
-        public dynamic getRions(Client c)
+        [Route("ClientData")]
+        public dynamic GetTotalData(Client c)
         {
+            //GettingRegions
 
             List<region> lstRegions = new List<region>();
             string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
@@ -231,6 +113,7 @@ namespace SummaryAPI2.Controllers
                         catch (Exception exx)
                         {
                             exx = null;
+                            break;
                         }
                     }
                 }
@@ -240,56 +123,13 @@ namespace SummaryAPI2.Controllers
             {
                 exxx = null;
             }
-            return lstRegions;
 
-        }
+            
 
-        [HttpPost]
-        [Route("getDateTime")]
-        public dynamic getDateTime()
-        {
-            reportTime rt = new reportTime();
+            //ClientData
 
-
-            rt.reportAt = DateTime.Now.ToString("dd-MM-yyyy HH:mm");
-
-            return rt;
-        }
-
-        [HttpPost]
-        [Route("Access")]
-        public dynamic Login()
-        {
-            Login login = new Login();
-            try
-            {
-                string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
-                SqlDataAdapter da1; DataSet ds;
-                SqlConnection cn = new SqlConnection(con);
-                da1 = new SqlDataAdapter("select top 1 * from AccessKeyTable order by slno desc", cn);
-                ds = new DataSet();
-                da1.Fill(ds);
-                string accesskey = ds.Tables[0].AsEnumerable().Select(x => x["access"].ToString()).FirstOrDefault();
-                login.Password = accesskey;
-                da1 = new SqlDataAdapter("select * from Portal_UserId", cn);
-                ds = new DataSet();
-                da1.Fill(ds);
-                string UserId = ds.Tables[0].AsEnumerable().Select(x => x["UserId"].ToString()).FirstOrDefault();
-                login.UserId = UserId;
-            }
-            catch (Exception ex)
-            {
-                ex = null;
-            }
-            return login;
-        }
-
-        [HttpPost]
-        [Route("ClientData")]
-        public dynamic getClientData(Client c)
-        {
             ////Add new client name 
-            skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
+            skipSDDD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
             string conSqlMain1 = string.Empty;
             //string conSqlCentral = string.Empty;
             string subDomain1 = string.Empty;
@@ -315,7 +155,7 @@ namespace SummaryAPI2.Controllers
                         connection.Open();
                         sqlCommand.Parameters.Clear();
                         subDomain1 = Convert.ToString(clientsData.Tables[0].Rows[cd]["DomainName"]);
-                        if (Array.IndexOf(skipSD, subDomain1) == -1)
+                        if (Array.IndexOf(skipSDDD, subDomain1) == -1)
                         {
                             sqlCommand.Parameters.Add("Name", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ClientName"];
                             //sqlCommand.Parameters.Add("Subdomain",SqlDbType.VarChar).Value = subDomain1.ToString() == "vignaninstruments" ? "web" : clientsData.Tables[0].Rows[cd]["DomainName"];
@@ -351,7 +191,7 @@ namespace SummaryAPI2.Controllers
             try
             {
                 //getting summary details from centralizedDB
-                string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
+                string[] skipSDD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
                 if (c.uid == "idea" && c.pwd == "bytes")
                 {
                     //CentralizedDB
@@ -396,7 +236,7 @@ namespace SummaryAPI2.Controllers
                                 subDomain = Convert.ToString(dsClientData.Tables[0].Rows[sd]["DomainName"]);
                                 conSqlSub = conSqlMain.Replace("IoTMainData", subDomain);
 
-                                if (Array.IndexOf(skipSD, subDomain) == -1)
+                                if (Array.IndexOf(skipSDD, subDomain) == -1)
                                 {
                                     //Getting data from Each SubDomain dsNotReporting,dsReporting,dsLoginId
                                     try
@@ -541,235 +381,36 @@ namespace SummaryAPI2.Controllers
             {
                 c.ErrorLogs(ex.Message, "getting summary details from centralizedDB");
                 ex = null;
-
             }
             lstclientData.RemoveAll(x => x.totalDevice == null || x.totalDevice == string.Empty || x.subDomain == "airflowcontrol" && x.domain == "dgtrak.online");
             //lstclientData.RemoveAll(x => x.subDomain == "airflowcontrol" && x.domain == "dgtrak.online");
-            //lstclientData.GroupBy(x => x.subDomain).Distinct();
+            ////lstclientData.GroupBy(x => x.subDomain).Distinct();
 
-            return lstclientData;
-
-        }
-        [HttpPost]
-        [Route("SendMail")]
-        public string Mail(MailInput v)
-        {
-            try
-            {
-                string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "ajaybharath");
-                SqlConnection cn = new SqlConnection(con);
-                SqlDataAdapter da1 = new SqlDataAdapter("select * from Mails", cn);
-                DataSet ds = new DataSet();
-                da1.Fill(ds);
-                string[] mails = ds.Tables[0].AsEnumerable().Select(x => x[1].ToString()).ToArray();
-                MailMessage mailMsg = new MailMessage();
-                mailMsg.From = new MailAddress(ConfigurationManager.AppSettings["emailId"].ToString(), "IB IoT");
-                foreach (string mail in mails)
-                {
-                    mailMsg.To.Add(new MailAddress(mail));
-                }
-                mailMsg.Subject = "Testing Mail";
-                mailMsg.Body = v.Message;
-                string filename = v.Filename;
-                Thread.Sleep(10000);
-                string userPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                string filePath = $"{userPath}/Downloads/" + filename;
-                string fileName = filePath.Split('/')[filePath.Split('/').Length - 1];
-                byte[] bytes = File.ReadAllBytes(filePath);
-                mailMsg.Attachments.Add(new Attachment(new MemoryStream(bytes), fileName));
-                mailMsg.IsBodyHtml = true;
-                SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
-                smtp.UseDefaultCredentials = false;
-                smtp.Credentials = new NetworkCredential(ConfigurationManager.AppSettings["emailId"].ToString(), ConfigurationManager.AppSettings["emailPwd"].ToString());
-                smtp.EnableSsl = true;
-                smtp.Send(mailMsg);
-                return "mail sent";
-            }
-            catch (Exception ex)
-            {
-                return "mail not sent!!!" + ex.Message;
-            }
-        }
-        [HttpPost]
-        [Route("MailConfig")]
-        public string SaveMail(MailConfig m)
-        {
-            string sql = "update mails set MailId=@mailid,Timestamp=@timestamp";
-            //string sql = "insert into mails(MailId,Timestamp) values(@mailid,@timestamp)";
-            string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
-            SqlConnection cn = new SqlConnection(con);
-            cn.Open();
-            using (SqlCommand cmd = new SqlCommand(sql, cn))
-            {
-                cmd.Parameters.Add("@mailid", SqlDbType.VarChar).Value = m.Mails;
-                cmd.Parameters.Add("@timestamp", SqlDbType.Time).Value = m.Time;
-                cmd.CommandType = CommandType.Text;
-                cmd.ExecuteNonQuery();
-            }
-            return "MailConfiguration Successfull!!!";
-
-        }
-        [Route("memory")]
-        [HttpGet]
-        [Obsolete]
-        public dynamic Memorymethod()
-        {
-            try
-            {
-                DataSet dsClientData = new DataSet();
-                using (SqlConnection cnMain = new SqlConnection("uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP"))
-                {
-                    SqlDataAdapter da = new SqlDataAdapter("select * from AWSDetails", cnMain);
-                    da.Fill(dsClientData);
-                }
-                List<CPU_Load> cPU_Loads = new List<CPU_Load>();
-                for (int sd = 0; sd < dsClientData.Tables[0].Rows.Count; sd++)
-                {
-                    CPU_Load d = new CPU_Load();
-                    try
-                    {
-                        d.DomainName = dsClientData.Tables[0].Rows[sd]["domain"].ToString();
-                        string AWSAccessKey, AWSSecretKey;
-                        if (d.DomainName == "subzeroiot.com")
-                        {
-                            AWSAccessKey = "AKIAXJT3T2E745CX6S2Q";//AKIATOOKBXDCYTSXOREY    aYjk4VPBFeEMikmZP1WM2sxjNaliX6fMaeJqRGVC
-                            AWSSecretKey = "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";
-                        }
-                        else
-                        {
-
-                            AWSAccessKey = "AKIATOOKBXDCYTSXOREY";//AKIATOOKBXDCYTSXOREY    aYjk4VPBFeEMikmZP1WM2sxjNaliX6fMaeJqRGVC
-                            AWSSecretKey = "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";
-                        }
-                        // Access Key ID: AKIAXJT3T2E745CX6S2Q.Access Key: VEjIH1Jo + rHz5VPig1aq2wNO1rqdGVeKD6vxG//k
-                        var newRegion = RegionEndpoint.GetBySystemName(dsClientData.Tables[0].Rows[sd]["region"].ToString());
-                        IAmazonCloudWatch cw = Amazon.AWSClientFactory.CreateAmazonCloudWatchClient(AWSAccessKey, AWSSecretKey, newRegion);
-                        try
-                        {
-                        First:
-                            Dimension dim = new Dimension() { Name = "InstanceId", Value = dsClientData.Tables[0].Rows[sd]["instanceid"].ToString() };
-                            System.Collections.Generic.List<Dimension> dimensions = new List<Dimension>() { dim };
-                            string startTime1 = DateTimeOffset.Parse(DateTime.Now.AddMinutes(-2).ToString()).ToUniversalTime().ToString("s");
-                            GetMetricStatisticsRequest reg = new GetMetricStatisticsRequest()
-                            {
-                                MetricName = "CPUUtilization",
-                                Period = 60,
-                                Statistics = new System.Collections.Generic.List<string>() { "Average" },
-                                Dimensions = dimensions,
-                                Namespace = "AWS/EC2",
-                                EndTime = DateTime.Now,
-                                StartTime = Convert.ToDateTime(startTime1)
-                            };
-                            var points = cw.GetMetricStatistics(reg).GetMetricStatisticsResult.Datapoints.OrderBy(p => p.Timestamp);
-                            if (points.Count() == 0)
-                            {
-                                goto First;
-                            }
-                            foreach (var p in points)
-                            {
-                                d.cpu_used = Math.Round(p.Average, 2).ToString();
-                                d.timestamp = (p.Timestamp).ToString();
-                            }
-                        }
-                        catch (Amazon.CloudWatch.AmazonCloudWatchException ex)
-                        {
-                            if (ex.ErrorCode.Equals("OptInRequired"))
-                                throw new Exception("You are not signed in for Amazon EC2.");
-                            else
-                                throw;
-                        }
-
-                        //PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-                        //dynamic firstValue = cpuCounter.NextValue();
-                        //System.Threading.Thread.Sleep(500);
-                        //firstValue = cpuCounter.NextValue();
-
-                        //d.cpu_used = Math.Round(firstValue, 0).ToString();
-                        //d.timestamp = DateTime.Now.ToString();
-
-                        //PerformanceCounter ramCounter;
-                        //ramCounter = new PerformanceCounter("Memory", "Available MBytes");
-                        //dynamic memory = ramCounter.NextValue();
-                        //d.memoryused = (8 - Math.Round((memory / 1000), 1)).ToString() + "GB";
-
-                        //var wmiObject = new ManagementObjectSearcher("select * from Win32_OperatingSystem");
-
-                        //var memoryValues = wmiObject.Get().Cast<ManagementObject>().Select(mo => new
-                        //{
-                        //    FreePhysicalMemory = Double.Parse(mo["FreePhysicalMemory"].ToString()),
-                        //    TotalVisibleMemorySize = Double.Parse(mo["TotalVisibleMemorySize"].ToString())
-                        //}).FirstOrDefault();
-
-                        //if (memoryValues != null)
-                        //{
-                        //    var percent = ((memoryValues.TotalVisibleMemorySize - memoryValues.FreePhysicalMemory) / memoryValues.TotalVisibleMemorySize) * 100;
-                        //    d.memoryused = Math.Round(percent, 2).ToString();
-
-                        //}
-                        //RamDetails rd = new RamDetails();
-                        string jsonString = "";
-                        //if ()
-                        //{
-
-                        //}
-                        // string URL = $"https://adminiot.{d.DomainName}/RamUsage_API/RamUsage/Server_Ram";
-                        string URL = "https://adminiot.iotsolution.net/RamUsage_API/RamUsage/Server_Ram";
-                        //string URL = "https://localhost:44389/Ram_Usage/memory";
-                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
-                        request.Method = "GET";
-                        request.ContentType = "application/json";
-                        WebResponse response = request.GetResponse();
-                        StreamReader sr = new StreamReader(response.GetResponseStream());
-                        jsonString = sr.ReadToEnd();
-                        sr.Close();
-                        dynamic stuff = JsonConvert.DeserializeObject(jsonString);
-                        //dynamic stuff = JsonConvert.DeserializeObject<RamDetails>(jsonString);
-                        var ram = stuff.RamUsage.Value;
-                        d.memoryused = ram;
-                        cPU_Loads.Add(d);
-                    }
-                    catch (Exception ex)
-                    {
-                        return ex.Message;
-                    }
-                }
-                return cPU_Loads;
-            }
-            catch (Exception ex)
-            {
-                return ex.Message;
-            }
-        }
-        [HttpGet]
-        [Route("SMSTOKEN")]
-        public dynamic smstokens()
-        {
+            //SMS Tokens
             int count = 0;
-        TryAgain:
+            string sms;
+            TryAgain:
             HttpClient clientCall = new HttpClient();
             HttpResponseMessage responseMessage = clientCall.GetAsync("https://control.msg91.com/api/balance.php?authkey=288771Alcs1Nmue5d4be4d2&type=4").Result;
             string SmsTokens = responseMessage.Content.ReadAsStringAsync().Result;
             if (SmsTokens.All(char.IsDigit)) //SmsTokens.Contains("418")
             {
-                return SmsTokens;
+                sms = SmsTokens.ToString();
             }
             else
             {
                 if (count == 3)
                 {
-                    return "N.A";
+                    sms = "N.A";
                 }
-                count++;
-                Thread.Sleep(800);
-                goto TryAgain;
+                else
+                {
+                    count++;
+                    Thread.Sleep(800);
+                    goto TryAgain;
+                }
             }
-
-        }
-
-        [HttpGet]
-        [Route("SSLExpDate")]
-        public dynamic getSSLExpDate()
-        {
+            //SSLDetails
             string[] SSLdomainNames = Convert.ToString(ConfigurationManager.AppSettings["domainsforsll"]).Split(',');
             //sslInfo _sslinfo = new sslInfo();
             List<sslDetails> ssdLst = new List<sslDetails>();
@@ -802,9 +443,61 @@ namespace SummaryAPI2.Controllers
                     ssdLst.Add(sslD);
                 }
             }
-            //_sslinfo.sslInformation = new List<sslDetails>();
-            //_sslinfo.sslInformation = ssdLst; return _sslinfo;
-            return ssdLst;
+
+            TotalData totalData = new TotalData();
+            totalData.CData = lstclientData;
+            totalData.Regions = lstRegions;
+            totalData.ssl = ssdLst;
+            totalData.SMSToken = sms;
+            totalData.ReportTime = DateTime.Now.ToString("dd-MM-yyyy HH:mm");
+
+            return totalData;
+        }
+        [HttpPost]
+        [Route("MailConfig")]
+        public string SaveMail(MailConfig m)
+        {
+            string sql = "update mails set MailId=@mailid,Timestamp=@timestamp";
+            //string sql = "insert into mails(MailId,Timestamp) values(@mailid,@timestamp)";
+            string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
+            SqlConnection cn = new SqlConnection(con);
+            cn.Open();
+            using (SqlCommand cmd = new SqlCommand(sql, cn))
+            {
+                cmd.Parameters.Add("@mailid", SqlDbType.VarChar).Value = m.Mails;
+                cmd.Parameters.Add("@timestamp", SqlDbType.Time).Value = m.Time;
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+            }
+            return "MailConfiguration Successfull!!!";
+
+        }
+        [HttpPost]
+        [Route("Access")]
+        public dynamic Login()
+        {
+            Login login = new Login();
+            try
+            {
+                string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
+                SqlDataAdapter da1; DataSet ds;
+                SqlConnection cn = new SqlConnection(con);
+                da1 = new SqlDataAdapter("select top 1 * from AccessKeyTable order by slno desc", cn);
+                ds = new DataSet();
+                da1.Fill(ds);
+                string accesskey = ds.Tables[0].AsEnumerable().Select(x => x["access"].ToString()).FirstOrDefault();
+                login.Password = accesskey;
+                da1 = new SqlDataAdapter("select * from Portal_UserId", cn);
+                ds = new DataSet();
+                da1.Fill(ds);
+                string UserId = ds.Tables[0].AsEnumerable().Select(x => x["UserId"].ToString()).FirstOrDefault();
+                login.UserId = UserId;
+            }
+            catch (Exception ex)
+            {
+                ex = null;
+            }
+            return login;
         }
     }
 }

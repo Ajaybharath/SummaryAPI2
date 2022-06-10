@@ -84,11 +84,6 @@ namespace SummaryAPI2.Models
         public string Critical { get; set; }
         public string Devices { get; set; }
         public string ReportingPercent { get; set; }
-
-        internal void Remove(string v)
-        {
-            throw new NotImplementedException();
-        }
     }
     public class MailInput
     {
@@ -106,6 +101,14 @@ namespace SummaryAPI2.Models
     {
         public string Password { get; set; }
         public string UserId { get; set; }
+    }
+    public class TotalData
+    {
+        public string ReportTime { get; set; }
+        public List<clientData> CData { get; set; }
+        public List<sslDetails> ssl { get; set; }
+        public List<region> Regions { get; set; }
+        public string SMSToken { get; set; }
     }
 
 }

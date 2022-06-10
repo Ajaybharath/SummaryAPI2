@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Http;
+using System.Web.Http.Cors;
 
 namespace SummaryAPI2
 {
@@ -20,10 +21,9 @@ namespace SummaryAPI2
                 routeTemplate: "api/{controller}/{id}",
                 defaults: new { id = RouteParameter.Optional }
             );
+            EnableCorsAttribute cors = new EnableCorsAttribute("*", "*", "*");
 
-            //var corsAttr = new EnableCorsAttribute("*");
-
-            config.EnableCors();
+            config.EnableCors(cors);
         }
     }
 }
