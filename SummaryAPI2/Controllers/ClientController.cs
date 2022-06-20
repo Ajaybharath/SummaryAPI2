@@ -395,6 +395,20 @@ namespace SummaryAPI2.Controllers
                             {
                                 subDomain = Convert.ToString(dsClientData.Tables[0].Rows[sd]["DomainName"]);
                                 conSqlSub = conSqlMain.Replace("IoTMainData", subDomain);
+                                subDomain = Convert.ToString(dsClientData.Tables[0].Rows[sd]["DomainName"]);
+                                string newConn = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionStringSplit"]);
+                                string[] newConnection = Convert.ToString(ConfigurationManager.AppSettings["changedDataBase"]).Split(',');
+                                if (Array.IndexOf(newConnection, subDomain) != -1)
+                                {
+                                    if (subDomain == "vignaninstruments")
+                                    {
+                                        conSqlSub = newConn.Replace("IoTMainData", "vignaninstruments_live");
+                                    }
+                                    else
+                                    {
+                                        conSqlSub = newConn.Replace("IoTMainData", subDomain);
+                                    }
+                                }
 
                                 if (Array.IndexOf(skipSD, subDomain) == -1)
                                 {
@@ -409,7 +423,7 @@ namespace SummaryAPI2.Controllers
 
                                         using (SqlConnection cnMain = new SqlConnection(conSqlSub))
                                         {
-                                            SqlDataAdapter da = new SqlDataAdapter("select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'", cnMain);
+                                            SqlDataAdapter da = new SqlDataAdapter("select count(*) as notReporting from sensordetails where isreporting = '0'", cnMain);
 
                                             da.Fill(dsNotReporting);
                                         }
