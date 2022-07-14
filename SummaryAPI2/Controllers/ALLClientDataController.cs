@@ -28,6 +28,7 @@ namespace SummaryAPI2.Controllers
         public string goodVal, warningVal, criticalVal;
         public int goodCount, warningCount, criticalCount;
         string[] skipSDDD;
+        string sms;
         [HttpPost]
         [Route("ClientData")]
         public dynamic GetTotalData(Client c)
@@ -68,8 +69,16 @@ namespace SummaryAPI2.Controllers
                                 region cD = new region();
 
                                 subDomain = Convert.ToString(dssubDomains.Tables[0].Rows[sd]["DomainName"]);
+                                if (subDomain == "vignaninstruments")
+                                {
+                                    conSqlSub = conSqlMain.Replace("IoTMainData", "vignaninstruments_live");
+                                }
+                                else
+                                {
+                                    conSqlSub = conSqlMain.Replace("IoTMainData", subDomain);
+                                }
 
-                                conSqlSub = conSqlMain.Replace("IoTMainData", subDomain);
+                                //conSqlSub = conSqlMain.Replace("IoTMainData", subDomain);
 
 
 
@@ -290,6 +299,7 @@ namespace SummaryAPI2.Controllers
                     string clientDetails = string.Empty;
                     //string goodVal, warningVal, criticalVal;
                     //select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'
+                    //select count(*) as notReporting from sensordetails where isreporting = '0'"
                     for (int i = 1; i < 10; i++)
                     {
                         //DomainName,IoTDomain from clientdetails
@@ -308,20 +318,28 @@ namespace SummaryAPI2.Controllers
                             for (int sd = 0; sd < dsClientData.Tables[0].Rows.Count; sd++)
                             {
                                 subDomain = Convert.ToString(dsClientData.Tables[0].Rows[sd]["DomainName"]);
-                                conSqlSub = conSqlMain.Replace("IoTMainData", subDomain);
-                                string newConn = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionStringSplit"]);
-                                string[] newConnection = Convert.ToString(ConfigurationManager.AppSettings["changedDataBase"]).Split(',');
-                                if (Array.IndexOf(newConnection, subDomain) != -1)
+                                if (subDomain == "vignaninstruments")
                                 {
-                                    if (subDomain == "vignaninstruments")
-                                    {
-                                        conSqlSub = newConn.Replace("IoTMainData", "vignaninstruments_live");
-                                    }
-                                    else
-                                    {
-                                        conSqlSub = newConn.Replace("IoTMainData", subDomain);
-                                    }
+                                    conSqlSub = conSqlMain.Replace("IoTMainData", "vignaninstruments_live");
                                 }
+                                else
+                                {
+                                    conSqlSub = conSqlMain.Replace("IoTMainData", subDomain);
+                                }
+                                //string newConn = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionStringSplit"]);
+                                //string[] newConnection = Convert.ToString(ConfigurationManager.AppSettings["changedDataBase"]).Split(',');
+                                //if (Array.IndexOf(newConnection, subDomain) != -1)
+                                //{
+                                //    conSqlSub = newConn.Replace("IoTMainData", subDomain);
+                                //    //if (subDomain == "vignaninstruments")
+                                //    //{
+                                //    //    conSqlSub = newConn.Replace("IoTMainData", "vignaninstruments_live");
+                                //    //}
+                                //    //else
+                                //    //{
+                                //    //    conSqlSub = newConn.Replace("IoTMainData", subDomain);
+                                //    //}
+                                //}
 
                                 if (Array.IndexOf(skipSDD, subDomain) == -1)
                                 {
@@ -336,7 +354,7 @@ namespace SummaryAPI2.Controllers
 
                                         using (SqlConnection cnMain = new SqlConnection(conSqlSub))
                                         {
-                                            SqlDataAdapter da = new SqlDataAdapter("select count(*) as notReporting from sensordetails where isreporting = '0'", cnMain);
+                                            SqlDataAdapter da = new SqlDataAdapter("select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'", cnMain);
 
                                             da.Fill(dsNotReporting);
                                         }
@@ -474,28 +492,37 @@ namespace SummaryAPI2.Controllers
             ////lstclientData.GroupBy(x => x.subDomain).Distinct();
 
             //SMS Tokens
-            int count = 0;
-            string sms;
-        TryAgain:
-            HttpClient clientCall = new HttpClient();
-            HttpResponseMessage responseMessage = clientCall.GetAsync("https://control.msg91.com/api/balance.php?authkey=288771Alcs1Nmue5d4be4d2&type=4").Result;
-            string SmsTokens = responseMessage.Content.ReadAsStringAsync().Result;
-            if (SmsTokens.All(char.IsDigit)) //SmsTokens.Contains("418")
+            
+           
+            try
             {
-                sms = SmsTokens.ToString();
-            }
-            else
-            {
-                if (count == 3)
+                int count = 0;
+            TryAgain:
+                HttpClient clientCall = new HttpClient();
+                HttpResponseMessage responseMessage = clientCall.GetAsync("https://control.msg91.com/api/balance.php?authkey=288771Alcs1Nmue5d4be4d2&type=4").Result;
+                string SmsTokens = responseMessage.Content.ReadAsStringAsync().Result;
+                if (SmsTokens.All(char.IsDigit)) //SmsTokens.Contains("418")
                 {
-                    sms = "N.A";
+                    sms = SmsTokens.ToString();
                 }
                 else
                 {
-                    count++;
-                    Thread.Sleep(800);
-                    goto TryAgain;
+                    if (count == 3)
+                    {
+                        sms = "N.A";
+                    }
+                    else
+                    {
+                        count++;
+                        Thread.Sleep(800);
+                        goto TryAgain;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                c.ErrorLogs(ex.Message,"Exception due to SMS Tokens!!!");
+                ex = null;
             }
             //SSLDetails
             string[] SSLdomainNames = Convert.ToString(ConfigurationManager.AppSettings["domainsforsll"]).Split(',');
@@ -503,33 +530,41 @@ namespace SummaryAPI2.Controllers
             List<sslDetails> ssdLst = new List<sslDetails>();
             for (int i = 0; i < SSLdomainNames.Length; i++)
             {
-                if (SSLdomainNames[i] != "")
+                try
                 {
-
-                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://" + SSLdomainNames[i] + "/");
-                    HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                    response.Close(); //retrieve the ssl cert and assign it to an X509Certificate object
-                    X509Certificate cert = request.ServicePoint.Certificate; //convert the X509Certificate to an X509Certificate2 object by passing it into the constructor
-                    X509Certificate2 cert2 = new X509Certificate2(cert); //string cn = cert2.GetIssuerName();
-                    string cedate = Convert.ToDateTime(cert2.GetExpirationDateString()).ToString("dd-MM-yyyy HH:mm");
-                    string cpub = cert2.GetPublicKeyString(); TimeSpan ts = new TimeSpan(); ts = Convert.ToDateTime(cert2.GetExpirationDateString()) - DateTime.Now; sslDetails sslD = new sslDetails(); sslD.domain = SSLdomainNames[i].Split('.')[1] + "." + SSLdomainNames[i].Split('.')[2];
-                    sslD.expTime = cedate;
-                    //ts = Convert.ToDateTime(cert2.GetExpirationDateString()) -Convert.ToDateTime("3/21/2022 09:30:00");
-                    if (ts.Days > 10)
+                    if (SSLdomainNames[i] != "")
                     {
-                        sslD.severity = "low";
+                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://" + SSLdomainNames[i] + "/");
+                        HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                        response.Close(); //retrieve the ssl cert and assign it to an X509Certificate object
+                        X509Certificate cert = request.ServicePoint.Certificate; //convert the X509Certificate to an X509Certificate2 object by passing it into the constructor
+                        X509Certificate2 cert2 = new X509Certificate2(cert); //string cn = cert2.GetIssuerName();
+                        string cedate = Convert.ToDateTime(cert2.GetExpirationDateString()).ToString("dd-MM-yyyy HH:mm");
+                        string cpub = cert2.GetPublicKeyString(); TimeSpan ts = new TimeSpan(); ts = Convert.ToDateTime(cert2.GetExpirationDateString()) - DateTime.Now; sslDetails sslD = new sslDetails(); sslD.domain = SSLdomainNames[i].Split('.')[1] + "." + SSLdomainNames[i].Split('.')[2];
+                        sslD.expTime = cedate;
+                        //ts = Convert.ToDateTime(cert2.GetExpirationDateString()) -Convert.ToDateTime("3/21/2022 09:30:00");
+                        if (ts.Days > 10)
+                        {
+                            sslD.severity = "low";
+                        }
+                        else if (ts.Days > 5 && ts.Days <= 10)
+                        {
+                            sslD.severity = "Medium";
+                        }
+                        else
+                        {
+                            sslD.severity = "High";
+                        }
+                        ssdLst.Add(sslD);
                     }
-                    else if (ts.Days > 5 && ts.Days <= 10)
-                    {
-                        sslD.severity = "Medium";
-                    }
-                    else
-                    {
-                        sslD.severity = "High";
-                    }
-                    ssdLst.Add(sslD);
+                }
+                catch (Exception ex)
+                {
+                    c.ErrorLogs(ex.Message, "error due to ssl certification");
+                    ex = null;
                 }
             }
+
 
             TotalData totalData = new TotalData();
             totalData.CData = lstclientData;
@@ -537,26 +572,36 @@ namespace SummaryAPI2.Controllers
             totalData.ssl = ssdLst;
             totalData.SMSToken = sms;
             totalData.ReportTime = DateTime.Now.ToString("dd-MM-yyyy HH:mm");
-
             return totalData;
+
         }
         [HttpPost]
         [Route("MailConfig")]
         public string SaveMail(MailConfig m)
         {
-            string sql = "update mails set MailId=@mailid,Timestamp=@timestamp";
-            //string sql = "insert into mails(MailId,Timestamp) values(@mailid,@timestamp)";
-            string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
-            SqlConnection cn = new SqlConnection(con);
-            cn.Open();
-            using (SqlCommand cmd = new SqlCommand(sql, cn))
+            Client c = new Client();
+            try
             {
-                cmd.Parameters.Add("@mailid", SqlDbType.VarChar).Value = m.Mails;
-                cmd.Parameters.Add("@timestamp", SqlDbType.Time).Value = m.Time;
-                cmd.CommandType = CommandType.Text;
-                cmd.ExecuteNonQuery();
+                string sql = "update mails set MailId=@mailid,Timestamp=@timestamp";
+                //string sql = "insert into mails(MailId,Timestamp) values(@mailid,@timestamp)";
+                string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
+                SqlConnection cn = new SqlConnection(con);
+                cn.Open();
+                using (SqlCommand cmd = new SqlCommand(sql, cn))
+                {
+                    cmd.Parameters.Add("@mailid", SqlDbType.VarChar).Value = m.Mails;
+                    cmd.Parameters.Add("@timestamp", SqlDbType.Time).Value = m.Time;
+                    cmd.CommandType = CommandType.Text;
+                    cmd.ExecuteNonQuery();
+                }
+                return "MailConfiguration Successfull!!!";
             }
-            return "MailConfiguration Successfull!!!";
+            catch (Exception ex)
+            {
+                c.ErrorLogs(ex.Message, "Exception near MailConfig");
+                ex = null;
+                return "MailConfiguration UnSuccessfull";
+            }
 
         }
         [HttpPost]
