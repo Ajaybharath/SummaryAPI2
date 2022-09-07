@@ -344,6 +344,7 @@ namespace SummaryAPI2.Controllers
                                 if (Array.IndexOf(skipSDD, subDomain) == -1)
                                 {
                                     //Getting data from Each SubDomain dsNotReporting,dsReporting,dsLoginId
+                                    //select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'
                                     try
                                     {
                                         DataSet dsReporting = new DataSet();
@@ -354,7 +355,7 @@ namespace SummaryAPI2.Controllers
 
                                         using (SqlConnection cnMain = new SqlConnection(conSqlSub))
                                         {
-                                            SqlDataAdapter da = new SqlDataAdapter("select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'", cnMain);
+                                            SqlDataAdapter da = new SqlDataAdapter("select count(*) as notReporting from sensordetails where isreporting = '0'", cnMain);
 
                                             da.Fill(dsNotReporting);
                                         }

@@ -435,7 +435,8 @@ namespace SummaryAPI2.Controllers
                                         DataSet dsRegions = new DataSet();
                                         DataSet dsLoginId = new DataSet();
                                         DataSet dsState = new DataSet();
-
+                                        
+                                        //select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'
                                         using (SqlConnection cnMain = new SqlConnection(conSqlSub))
                                         {
                                             SqlDataAdapter da = new SqlDataAdapter("select count(*) as notReporting from sensordetails where isreporting = '0'", cnMain);

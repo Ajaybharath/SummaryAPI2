@@ -36,7 +36,10 @@ namespace SummaryAPI2.Models
             exceptionsqlConnection.Close();
         }
     }
-
+    public class UserDetails
+    {
+        public string UserName { get; set; }
+    }
     public class reportTime
     {
         public string reportAt { get; set; }
