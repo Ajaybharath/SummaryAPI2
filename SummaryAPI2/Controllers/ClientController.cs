@@ -784,25 +784,49 @@ namespace SummaryAPI2.Controllers
         [Route("SMSTOKEN")]
         public dynamic smstokens()
         {
-            int count = 0;
+            int count = 0; string sms = string.Empty;
         TryAgain:
-            HttpClient clientCall = new HttpClient();
-            HttpResponseMessage responseMessage = clientCall.GetAsync("https://control.msg91.com/api/balance.php?authkey=288771Alcs1Nmue5d4be4d2&type=4").Result;
-            string SmsTokens = responseMessage.Content.ReadAsStringAsync().Result;
-            if (SmsTokens.All(char.IsDigit)) //SmsTokens.Contains("418")
+            try
             {
-                return SmsTokens;
+                HttpClient clientCall = new HttpClient();
+                HttpResponseMessage responseMessage = clientCall.GetAsync("https://control.msg91.com/api/balance.php?authkey=288771Alcs1Nmue5d4be4d2&type=0").Result;
+                string SmsTokens = responseMessage.Content.ReadAsStringAsync().Result;
+                sms = Convert.ToDecimal(SmsTokens).ToString();
             }
-            else
+            catch (Exception ex)
             {
                 if (count == 3)
                 {
-                    return "N.A";
+                    sms = "N.A";
                 }
-                count++;
-                Thread.Sleep(800);
-                goto TryAgain;
+                else
+                {
+                    count++;
+                    Thread.Sleep(800);
+                    goto TryAgain;
+                }
+                ex = null;
             }
+            return sms;
+        //    int count = 0;
+        //TryAgain:
+        //    HttpClient clientCall = new HttpClient();
+        //    HttpResponseMessage responseMessage = clientCall.GetAsync("https://control.msg91.com/api/balance.php?authkey=288771Alcs1Nmue5d4be4d2&type=0").Result;
+        //    string SmsTokens = responseMessage.Content.ReadAsStringAsync().Result;
+        //    if (SmsTokens.All(char.IsDigit)) //SmsTokens.Contains("418")
+        //    {
+        //        return SmsTokens;
+        //    }
+        //    else
+        //    {
+        //        if (count == 3)
+        //        {
+        //            return "N.A";
+        //        }
+        //        count++;
+        //        Thread.Sleep(800);
+        //        goto TryAgain;
+        //    }
 
         }
 

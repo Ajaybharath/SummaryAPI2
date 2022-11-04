@@ -493,35 +493,44 @@ namespace SummaryAPI2.Controllers
             ////lstclientData.GroupBy(x => x.subDomain).Distinct();
 
             //SMS Tokens
-            
-           
+            int count = 0;
+        TryAgain:
             try
             {
-                int count = 0;
-            TryAgain:
                 HttpClient clientCall = new HttpClient();
-                HttpResponseMessage responseMessage = clientCall.GetAsync("https://control.msg91.com/api/balance.php?authkey=288771Alcs1Nmue5d4be4d2&type=4").Result;
+                HttpResponseMessage responseMessage = clientCall.GetAsync("https://control.msg91.com/api/balance.php?authkey=288771Alcs1Nmue5d4be4d2&type=0").Result;
                 string SmsTokens = responseMessage.Content.ReadAsStringAsync().Result;
-                if (SmsTokens.All(char.IsDigit)) //SmsTokens.Contains("418")
-                {
-                    sms = SmsTokens.ToString();
-                }
-                else
-                {
-                    if (count == 3)
-                    {
-                        sms = "N.A";
-                    }
-                    else
-                    {
-                        count++;
-                        Thread.Sleep(800);
-                        goto TryAgain;
-                    }
-                }
+                sms = Convert.ToDecimal(SmsTokens).ToString();
+                //if (SmsTokens.All(char.IsDigit)) //SmsTokens.Contains("418")
+                //{
+                //    sms = SmsTokens.ToString();
+                //}
+                //else
+                //{
+                //    if (count == 3)
+                //    {
+                //        sms = "N.A";
+                //    }
+                //    else
+                //    {
+                //        count++;
+                //        Thread.Sleep(800);
+                //        goto TryAgain;
+                //    }
+                //}
             }
             catch (Exception ex)
             {
+                if (count == 3)
+                {
+                    sms = "N.A";
+                }
+                else
+                {
+                    count++;
+                    Thread.Sleep(800);
+                    goto TryAgain;
+                }
                 c.ErrorLogs(ex.Message,"Exception due to SMS Tokens!!!");
                 ex = null;
             }
