@@ -19,6 +19,7 @@ using Newtonsoft.Json;
 using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using System.Web.Http.Cors;
+using System.Xml.Linq;
 
 namespace SummaryAPI2.Controllers
 {
@@ -640,6 +641,89 @@ namespace SummaryAPI2.Controllers
                 ex = null;
             }
             return login;
+        }
+        [HttpPost]
+        [Route("InsertLicense")]
+        public dynamic InsertLicense(LicenseDetails l)
+        {
+            SqlHelper sH = new SqlHelper();
+            try
+            {
+                if (!string.IsNullOrEmpty(l.LicenseKey))
+                {
+                    sH.InitializeDataConnecion();
+                    sH.AddParameterToSQLCommand("@PersonName", SqlDbType.VarChar);
+                    sH.SetSQLCommandParameterValue("@PersonName", l.ActivatedPersonName);
+                    sH.AddParameterToSQLCommand("@Organization", SqlDbType.VarChar);
+                    sH.SetSQLCommandParameterValue("@Organization",l.Organization);
+                    sH.AddParameterToSQLCommand("@MacAddress", SqlDbType.VarChar);
+                    sH.SetSQLCommandParameterValue("@MacAddress", l.MacAddress);
+                    sH.AddParameterToSQLCommand("@serialNumber", SqlDbType.VarChar);
+                    sH.SetSQLCommandParameterValue("@serialNumber", l.LicenseKey);
+                    DataSet dsLicense = sH.GetDatasetByCommand("Update_LicenseKeyTable");
+                    sH.CloseConnection();
+                    var status = Convert.ToInt16(dsLicense.Tables[0].Rows[0]["Status"]);
+                    return status;
+                }
+                else
+                {
+                    sH.InitializeDataConnecion();
+                    sH.AddParameterToSQLCommand("@customerMailid", SqlDbType.VarChar);
+                    sH.SetSQLCommandParameterValue("@customerMailid", l.customerMailId);
+                    sH.AddParameterToSQLCommand("@customerName", SqlDbType.VarChar);
+                    sH.SetSQLCommandParameterValue("@customerName", l.customerName);
+                    //sH.AddParameterToSQLCommand("@customerMobile", SqlDbType.VarChar);
+                    //sH.SetSQLCommandParameterValue("@customerMobile", l.customerMobileNumber);
+                    sH.AddParameterToSQLCommand("@clientId", SqlDbType.VarChar);
+                    sH.SetSQLCommandParameterValue("@clientId", l.customerId);
+                    DataSet dsLicense = sH.GetDatasetByCommand("generateLicenseKey");
+                    sH.CloseConnection();
+                    return "updated";
+                }
+            }
+            catch (Exception ex)
+            {
+                return "exception" + ex.Message;
+                ex=null;
+            }
+        }
+        [HttpGet]
+        [Route("GetLicenseTable")]
+        public dynamic GetLicenseTable()
+        {
+            SqlHelper sH = new SqlHelper();
+            Client c = new Client();
+            List<LicenseDetails> licenseDetails = new List<LicenseDetails>();
+            try
+            {
+                sH.InitializeDataConnecion();
+                DataSet ds = sH.GetDatasetByCommand("getLicenseKeyTable");
+                sH.CloseConnection();
+                DataTable dt = ds.Tables[0];
+                if(dt.Rows.Count > 0)
+                {
+                    for (int ls = 0; ls < dt.Rows.Count; ls++)
+                    {
+                        LicenseDetails l = new LicenseDetails();
+                        l.startDate =  c.epochUTCtoReadableUTC(dt.Rows[ls]["startDate"].ToString()).ToString("dd-MM-yyyy HH:mm");
+                        l.endDate = c.epochUTCtoReadableUTC(dt.Rows[ls]["endDate"].ToString()).ToString("dd-MM-yyyy HH:mm");
+                        l.clientId = dt.Rows[ls]["clientId"].ToString();
+                        l.customerName = dt.Rows[ls]["customerName"].ToString();
+                        l.customerMailId = dt.Rows[ls]["customerMail"].ToString();
+                        //l.customerMobileNumber = dt.Rows[ls]["customerMobile"].ToString();
+                        l.LicenseKey = dt.Rows[ls]["LicenseKey"].ToString();
+                        l.Organization = dt.Rows[ls]["Organization"].ToString();
+                        l.ActivatedPersonName = dt.Rows[ls]["ActivationPersonName"].ToString();
+                        l.MacAddress = dt.Rows[ls]["MacAddress"].ToString();
+                        licenseDetails.Add(l);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ex = null;
+            }
+            return licenseDetails;
         }
     }
 }

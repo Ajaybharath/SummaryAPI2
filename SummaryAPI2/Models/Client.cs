@@ -35,6 +35,19 @@ namespace SummaryAPI2.Models
             }
             exceptionsqlConnection.Close();
         }
+        public DateTime epochUTCtoReadableUTC(string epochUTC)
+        {
+            if (epochUTC.Length > 10)
+            {
+                epochUTC = epochUTC.Substring(0, 10);
+            }
+            long epoch = Convert.ToInt64(epochUTC) + 19800;// + 19800; //indian time + 330 mins
+                                                           //long epoch = Convert.ToInt64(epochUTC);
+
+            DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            return UnixEpoch + TimeSpan.FromMilliseconds((epoch) * 1000);
+
+        }
     }
     public class UserDetails
     {
@@ -93,6 +106,20 @@ namespace SummaryAPI2.Models
         //public string MailIds { get; set; }
         public string Message { get; set; }
         public string Filename { get; set; }
+    }
+    public class LicenseDetails
+    {
+        public string customerId { get; set; }
+        public string customerName { get; set; }
+        public string customerMailId { get; set; }
+        //public string customerMobileNumber { get; set; }
+        public string LicenseKey { get; set; }
+        public string Organization { get; set; }
+        public string ActivatedPersonName { get; set; }
+        public string MacAddress { get; set; }
+        public string startDate { get; set; }
+        public string endDate { get; set; }
+        public string clientId { get; set; }
     }
     public class MailConfig
     {
