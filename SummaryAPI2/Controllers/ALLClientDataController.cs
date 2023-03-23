@@ -705,8 +705,15 @@ namespace SummaryAPI2.Controllers
                     for (int ls = 0; ls < dt.Rows.Count; ls++)
                     {
                         LicenseDetails l = new LicenseDetails();
-                        l.startDate =  c.epochUTCtoReadableUTC(dt.Rows[ls]["startDate"].ToString()).ToString("dd-MM-yyyy HH:mm");
-                        l.endDate = c.epochUTCtoReadableUTC(dt.Rows[ls]["endDate"].ToString()).ToString("dd-MM-yyyy HH:mm");
+                        try
+                        {
+                            l.startDate = c.epochUTCtoReadableUTC(dt.Rows[ls]["startDate"].ToString()).ToString("dd-MM-yyyy HH:mm");
+                            l.endDate = c.epochUTCtoReadableUTC(dt.Rows[ls]["endDate"].ToString()).ToString("dd-MM-yyyy HH:mm");
+                        }
+                        catch (Exception ex)
+                        {
+                            ex = null;
+                        }
                         l.clientId = dt.Rows[ls]["clientId"].ToString();
                         l.customerName = dt.Rows[ls]["customerName"].ToString();
                         l.customerMailId = dt.Rows[ls]["customerMail"].ToString();
@@ -724,6 +731,32 @@ namespace SummaryAPI2.Controllers
                 ex = null;
             }
             return licenseDetails;
+        }
+        [HttpPost]
+        [Route("updateLicense")]
+        public dynamic updateLicense(LicenseDetails l)
+        {
+            SqlHelper sH = new SqlHelper();
+            try
+            {
+                sH.InitializeDataConnecion();
+                sH.AddParameterToSQLCommand("@customerMailid", SqlDbType.VarChar);
+                sH.SetSQLCommandParameterValue("@customerMailid", l.customerMailId);
+                sH.AddParameterToSQLCommand("@customerName", SqlDbType.VarChar);
+                sH.SetSQLCommandParameterValue("@customerName", l.customerName);
+                sH.AddParameterToSQLCommand("@LicenseKey", SqlDbType.VarChar);
+                sH.SetSQLCommandParameterValue("@LicenseKey", l.LicenseKey);
+                sH.AddParameterToSQLCommand("@fromDate", SqlDbType.VarChar);
+                sH.SetSQLCommandParameterValue("@fromDate", l.endDate);
+                DataSet dsLicense = sH.GetDatasetByCommand("updateLicenseKeyTableDate");
+                sH.CloseConnection();
+                return "updated";
+            }
+            catch (Exception ex)
+            {
+                return "exception" + ex.Message;
+                ex = null;
+            }
         }
     }
 }
