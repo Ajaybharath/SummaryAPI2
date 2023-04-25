@@ -29,6 +29,7 @@ namespace SummaryAPI2.Controllers
         public string goodVal, warningVal, criticalVal;
         public int goodCount, warningCount, criticalCount;
         string[] skipSD;
+        string[] skipSDDD;
         //[HttpPost]
         //[Route("Details")]
         //public dynamic get_clientDetails(Client c)
@@ -296,16 +297,182 @@ namespace SummaryAPI2.Controllers
         [Route("ClientData")]
         public dynamic getClientData(Client c)
         {
-            ////Add new client name 
-            skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
+            //GettingRegions
+
+            List<region> lstRegions = new List<region>();
+            string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
+
+            try
+            {
+                if (c.uid == "idea" && c.pwd == "bytes")
+                {
+                    string conSqlMain = string.Empty;
+                    string conSqlSub = string.Empty;
+                    string subDomain = string.Empty;
+
+
+                    for (int i = 1; i < 10; i++)
+                    {
+                        try
+                        {
+
+                            conSqlMain = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString" + i]);
+
+                            DataSet dssubDomains = new DataSet();
+
+                            using (SqlConnection cnMain = new SqlConnection(conSqlMain))
+                            {
+                                SqlDataAdapter da = new SqlDataAdapter("select DomainName,IoTDomain from clientdetails", cnMain);
+
+                                da.Fill(dssubDomains);
+                            }
+
+
+                            for (int sd = 0; sd < dssubDomains.Tables[0].Rows.Count; sd++)
+                            {
+                                region cD = new region();
+
+                                subDomain = Convert.ToString(dssubDomains.Tables[0].Rows[sd]["DomainName"]);
+                                if (subDomain == "vignaninstruments")
+                                {
+                                    conSqlSub = conSqlMain.Replace("IoTMainData", "vignaninstruments_live");
+                                }
+                                else
+                                {
+                                    conSqlSub = conSqlMain.Replace("IoTMainData", subDomain);
+                                }
+
+                                //conSqlSub = conSqlMain.Replace("IoTMainData", subDomain);
+
+
+
+                                if (Array.IndexOf(skipSD, subDomain) == -1)
+                                {
+                                    try
+                                    {
+
+                                        DataSet dsRegions = new DataSet();
+
+                                        //regions
+                                        using (SqlConnection cnMain = new SqlConnection(conSqlSub))
+                                        {
+                                            SqlDataAdapter da = new SqlDataAdapter("select region_name as Region,latitude,longitude from regiondetails", cnMain);
+
+                                            da.Fill(dsRegions);
+                                        }
+
+
+
+                                        for (int ri = 0; ri < dsRegions.Tables[0].Rows.Count; ri++)
+                                        {
+                                            region r = new region();
+
+                                            r.name = Convert.ToString(dsRegions.Tables[0].Rows[ri]["Region"]);
+                                            r.location = Convert.ToString(dsRegions.Tables[0].Rows[ri]["latitude"]) + "," + Convert.ToString(dsRegions.Tables[0].Rows[ri]["longitude"]);
+
+
+                                            lstRegions.Add(r);
+                                        }
+                                    }
+                                    catch (Exception exFor)
+                                    {
+                                        exFor = null;
+
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception exx)
+                        {
+                            exx = null;
+                            break;
+                        }
+                    }
+                }
+
+            }
+            catch (Exception exxx)
+            {
+                exxx = null;
+            }
+
+
+
+            //ClientData
+
+            skipSDDD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
             string conSqlMain1 = string.Empty;
             //string conSqlCentral = string.Empty;
             string subDomain1 = string.Empty;
+            List<string> existingClients = new List<string>();
+            //deleting subdomains which doesn't exist
+            for (int i = 1; i < 10; i++)
+            {
+                try
+                {
+                    // delete not existing Subdomains
+                    conSqlMain1 = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString" + i]);
+                    DataSet clientsData = new DataSet();
+                    using (SqlConnection cnMain = new SqlConnection(conSqlMain1))
+                    {
+                        SqlDataAdapter da = new SqlDataAdapter("select DomainName,IoTDomain from clientdetails", cnMain);
+                        da.Fill(clientsData);
+                    }
+                    existingClients.AddRange(clientsData.Tables[0].AsEnumerable().Select(x => x[0].ToString()).ToList());
+                }
+                catch (Exception ex)
+                {
+                    if (conSqlMain1 != "")
+                    {
+                        c.ErrorLogs(ex.Message, "Inserting Clientsdetails Data into CentralizedDB if not Exists" + conSqlMain1);
+                        ex = null;
+                    }
+                    else if (conSqlMain1 == "")
+                    {
+                        c.ErrorLogs(ex.Message, "At Inserting Clientsdetails Data into CentralizedDB if not Exists due to Empty connection string" + conSqlMain1);
+                        ex = null;
+                        break;
+                    }
+
+                }
+            }
+            try
+            {
+                string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
+                //string con = "uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP";
+                using (SqlConnection cn = new SqlConnection(con))
+                {
+                    SqlDataAdapter da1 = new SqlDataAdapter("select * from centralcontrol", cn);
+                    DataSet ds = new DataSet();
+                    da1.Fill(ds);
+                    List<string> deletingClients = ds.Tables[0].AsEnumerable().Select(x => x["Subdomain"].ToString()).ToList();
+                    var results = deletingClients.Where(m => !existingClients.Contains(m));
+                    //string str = string.Join(",", results);
+                    string deleteClients = "'" + String.Join("','", results) + "'";
+                    deleteClients = "delete from centralcontrol where Subdomain in " + "(" + deleteClients + ")";
+                    cn.Open();
+                    SqlCommand sqlCommand = new SqlCommand(deleteClients, cn);
+                    sqlCommand.CommandType = CommandType.Text;
+                    sqlCommand.ExecuteNonQuery();
+                    cn.Close();
+                }
+            }
+            catch (Exception exL)
+            {
+                c.ErrorLogs(exL.Message, "From CentralizedDataBase while  Deleting");
+                exL = null;
+            }
+
+
+
+            //data Inserting into central DashBoard
             for (int i = 1; i < 10; i++)
             {
                 //Inserting Clientsdetails Data into CentralizedDB if not Exists
                 try
                 {
+                    // delete not existing Subdomains
                     conSqlMain1 = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString" + i]);
                     DataSet clientsData = new DataSet();
                     using (SqlConnection cnMain = new SqlConnection(conSqlMain1))
@@ -315,6 +482,9 @@ namespace SummaryAPI2.Controllers
                     }
                     string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
                     SqlConnection connection = new SqlConnection(con);//"uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP"
+
+
+
                     SqlCommand sqlCommand = new SqlCommand("Insert_centralcontrol", connection);
                     sqlCommand.CommandType = CommandType.StoredProcedure;
 
@@ -323,7 +493,7 @@ namespace SummaryAPI2.Controllers
                         connection.Open();
                         sqlCommand.Parameters.Clear();
                         subDomain1 = Convert.ToString(clientsData.Tables[0].Rows[cd]["DomainName"]);
-                        if (Array.IndexOf(skipSD, subDomain1) == -1)
+                        if (Array.IndexOf(skipSDDD, subDomain1) == -1)
                         {
                             sqlCommand.Parameters.Add("Name", SqlDbType.VarChar).Value = clientsData.Tables[0].Rows[cd]["ClientName"];
                             //sqlCommand.Parameters.Add("Subdomain",SqlDbType.VarChar).Value = subDomain1.ToString() == "vignaninstruments" ? "web" : clientsData.Tables[0].Rows[cd]["DomainName"];
@@ -359,24 +529,32 @@ namespace SummaryAPI2.Controllers
             try
             {
                 //getting summary details from centralizedDB
-                string[] skipSD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
+                string[] skipSDD = Convert.ToString(ConfigurationManager.AppSettings["skip"]).Split(',');
                 if (c.uid == "idea" && c.pwd == "bytes")
                 {
                     //CentralizedDB
-                    string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
-                    //string con = "uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP";
-                    SqlConnection cn = new SqlConnection(con);
-                    SqlDataAdapter da1 = new SqlDataAdapter("select * from centralcontrol", cn);
-                    DataSet ds = new DataSet();
-                    da1.Fill(ds);
-                    for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+                    try
                     {
-                        clientData clientData = new clientData();
-                        clientData.C_CID = ds.Tables[0].Rows[i]["C_CID"].ToString();
-                        clientData.domain = ds.Tables[0].Rows[i]["Domain"].ToString();
-                        clientData.subDomain = ds.Tables[0].Rows[i]["Subdomain"].ToString();
-                        clientData.portal = ds.Tables[0].Rows[i]["PortalURL"].ToString();
-                        lstclientData.Add(clientData);
+                        string con = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionString1"]).Replace("IoTMainData", "CentralizedDB");
+                        //string con = "uid=sa;pwd=Ide@123;database=AB;server=DESKTOP-FMJB5MP";
+                        SqlConnection cn = new SqlConnection(con);
+                        SqlDataAdapter da1 = new SqlDataAdapter("select * from centralcontrol", cn);
+                        DataSet ds = new DataSet();
+                        da1.Fill(ds);
+                        for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+                        {
+                            clientData clientData = new clientData();
+                            clientData.C_CID = ds.Tables[0].Rows[i]["C_CID"].ToString();
+                            clientData.domain = ds.Tables[0].Rows[i]["Domain"].ToString();
+                            clientData.subDomain = ds.Tables[0].Rows[i]["Subdomain"].ToString();
+                            clientData.portal = ds.Tables[0].Rows[i]["PortalURL"].ToString();
+                            lstclientData.Add(clientData);
+                        }
+                    }
+                    catch (Exception exL)
+                    {
+                        c.ErrorLogs(exL.Message, "From CentralizedDataBase");
+                        exL = null;
                     }
                     //reporting
                     string conSqlMain = string.Empty;
@@ -384,6 +562,8 @@ namespace SummaryAPI2.Controllers
                     string subDomain = string.Empty;
                     string clientDetails = string.Empty;
                     //string goodVal, warningVal, criticalVal;
+                    //select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'
+                    //select count(*) as notReporting from sensordetails where isreporting = '0'"
                     for (int i = 1; i < 10; i++)
                     {
                         //DomainName,IoTDomain from clientdetails
@@ -425,9 +605,10 @@ namespace SummaryAPI2.Controllers
                                 //    //}
                                 //}
 
-                                if (Array.IndexOf(skipSD, subDomain) == -1)
+                                if (Array.IndexOf(skipSDD, subDomain) == -1)
                                 {
                                     //Getting data from Each SubDomain dsNotReporting,dsReporting,dsLoginId
+                                    //select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'
                                     try
                                     {
                                         DataSet dsReporting = new DataSet();
@@ -435,8 +616,7 @@ namespace SummaryAPI2.Controllers
                                         DataSet dsRegions = new DataSet();
                                         DataSet dsLoginId = new DataSet();
                                         DataSet dsState = new DataSet();
-                                        
-                                        //select count(*) as notReporting from sensordetails where isnull(isreporting, '0') = '0'
+
                                         using (SqlConnection cnMain = new SqlConnection(conSqlSub))
                                         {
                                             SqlDataAdapter da = new SqlDataAdapter("select count(*) as notReporting from sensordetails where isreporting = '0'", cnMain);
@@ -571,11 +751,8 @@ namespace SummaryAPI2.Controllers
             {
                 c.ErrorLogs(ex.Message, "getting summary details from centralizedDB");
                 ex = null;
-
             }
             lstclientData.RemoveAll(x => x.totalDevice == null || x.totalDevice == string.Empty || x.subDomain == "airflowcontrol" && x.domain == "dgtrak.online");
-            //lstclientData.RemoveAll(x => x.subDomain == "airflowcontrol" && x.domain == "dgtrak.online");
-            //lstclientData.GroupBy(x => x.subDomain).Distinct();
 
             return lstclientData;
 

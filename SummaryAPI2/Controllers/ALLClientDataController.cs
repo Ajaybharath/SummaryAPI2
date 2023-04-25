@@ -662,8 +662,8 @@ namespace SummaryAPI2.Controllers
                     sH.SetSQLCommandParameterValue("@serialNumber", l.LicenseKey);
                     DataSet dsLicense = sH.GetDatasetByCommand("Update_LicenseKeyTable");
                     sH.CloseConnection();
-                    var status = Convert.ToInt16(dsLicense.Tables[0].Rows[0]["Status"]);
-                    return status;
+                    //var status = Convert.ToInt16(dsLicense.Tables[0].Rows[0]["Status"]);
+                    return dsLicense;
                 }
                 else
                 {
@@ -687,9 +687,9 @@ namespace SummaryAPI2.Controllers
                 ex=null;
             }
         }
-        [HttpGet]
+        [HttpPost]
         [Route("GetLicenseTable")]
-        public dynamic GetLicenseTable()
+        public dynamic GetLicenseTable(LicenseDetails ld)
         {
             SqlHelper sH = new SqlHelper();
             Client c = new Client();
@@ -697,6 +697,15 @@ namespace SummaryAPI2.Controllers
             try
             {
                 sH.InitializeDataConnecion();
+                sH.AddParameterToSQLCommand("@MacAddress", SqlDbType.VarChar);
+                if (string.IsNullOrEmpty(ld.MacAddress))
+                {
+                    sH.SetSQLCommandParameterValue("@MacAddress", DBNull.Value);
+                }
+                else
+                {
+                    sH.SetSQLCommandParameterValue("@MacAddress", ld.MacAddress);
+                }
                 DataSet ds = sH.GetDatasetByCommand("getLicenseKeyTable");
                 sH.CloseConnection();
                 DataTable dt = ds.Tables[0];
