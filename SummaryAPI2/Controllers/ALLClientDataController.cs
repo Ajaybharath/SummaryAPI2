@@ -20,6 +20,8 @@ using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using System.Web.Http.Cors;
 using System.Xml.Linq;
+using Amazon.IdentityManagement.Model;
+using SummaryAPI2.Helpers;
 
 namespace SummaryAPI2.Controllers
 {
@@ -647,6 +649,9 @@ namespace SummaryAPI2.Controllers
         public dynamic InsertLicense(LicenseDetails l)
         {
             SqlHelper sH = new SqlHelper();
+            String htmlContent = string.Empty;
+            string LicenseKey = string.Empty;
+            Mail mailHelper = new Mail();
             try
             {
                 if (!string.IsNullOrEmpty(l.LicenseKey))
@@ -678,6 +683,9 @@ namespace SummaryAPI2.Controllers
                     sH.SetSQLCommandParameterValue("@clientId", l.customerId);
                     DataSet dsLicense = sH.GetDatasetByCommand("generateLicenseKey");
                     sH.CloseConnection();
+                    LicenseKey = dsLicense.Tables[0].Rows[0]["Licensekey"].ToString();
+                    htmlContent = $"Dear Sir,<br/>Greetings!!<br/><br/>Enclosed a License Details for IBLogger Application<br/><br/>LicenseKey : <b><u>{LicenseKey}</u></b><br/><br/>The Above License Validity is for One Year from the Date of Activation<br/> Example : If Date of Activation is 20-08-2023 valid upto 20-08-2024 <br/><br/>   Regards,<br/>Support Team <br/> Ideabytes IoT";
+                    mailHelper.LicenseMail(l.customerMailId, htmlContent);
                     return "updated";
                 }
             }
@@ -697,14 +705,14 @@ namespace SummaryAPI2.Controllers
             try
             {
                 sH.InitializeDataConnecion();
-                sH.AddParameterToSQLCommand("@MacAddress", SqlDbType.VarChar);
-                if (string.IsNullOrEmpty(ld.MacAddress))
+                sH.AddParameterToSQLCommand("@LicenseKey", SqlDbType.VarChar);
+                if (string.IsNullOrEmpty(ld.LicenseKey))
                 {
-                    sH.SetSQLCommandParameterValue("@MacAddress", DBNull.Value);
+                    sH.SetSQLCommandParameterValue("@LicenseKey", DBNull.Value);
                 }
                 else
                 {
-                    sH.SetSQLCommandParameterValue("@MacAddress", ld.MacAddress);
+                    sH.SetSQLCommandParameterValue("@LicenseKey", ld.LicenseKey);
                 }
                 DataSet ds = sH.GetDatasetByCommand("getLicenseKeyTable");
                 sH.CloseConnection();
@@ -746,6 +754,10 @@ namespace SummaryAPI2.Controllers
         public dynamic updateLicense(LicenseDetails l)
         {
             SqlHelper sH = new SqlHelper();
+            Client c = new Client();
+            String htmlContent = string.Empty;
+            string LicenseKey = string.Empty;
+            Mail mailHelper = new Mail();
             try
             {
                 sH.InitializeDataConnecion();
@@ -758,6 +770,15 @@ namespace SummaryAPI2.Controllers
                 sH.AddParameterToSQLCommand("@fromDate", SqlDbType.VarChar);
                 sH.SetSQLCommandParameterValue("@fromDate", l.endDate);
                 DataSet dsLicense = sH.GetDatasetByCommand("updateLicenseKeyTableDate");
+                if (!string.IsNullOrEmpty(l.endDate))
+                {
+                    if (dsLicense.Tables.Count > 0)
+                    {
+                        LicenseKey = dsLicense.Tables[0].Rows[0]["Licensekey"].ToString();
+                        htmlContent = $"Dear Sir,<br/>Greetings!!<br/><br/>Enclosed a License Details for IBLogger Application<br/><br/>LicenseKey : <b><u>{LicenseKey}</u></b><br/><br/>The Above License Valid Upto {c.epochUTCtoReadableUTC(l.endDate).ToString("dd-MM-yyyy")}<br/><br/>   Regards,<br/>Support Team <br/> Ideabytes IoT";
+                        mailHelper.LicenseMail(l.customerMailId,htmlContent);
+                    }
+                }
                 sH.CloseConnection();
                 return "updated";
             }
